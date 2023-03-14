@@ -3,50 +3,38 @@ import java.util.ArrayList;
 
 public class Hand {
     // member
-    private ArrayList<Card> cardList;
+    private final ArrayList<Card> cardList;
 
-    public Hand() {
-        cardList = new ArrayList<Card>();
-    }
+    /* コンストラクタ */
+    public Hand() { cardList = new ArrayList<>(); }
 
-    public void addCard(Card newCard) {
-        cardList.add(newCard);
-    }
+    /* カード情報関連 */
+    public void addCard(Card newCard) { cardList.add(newCard); }
+    public void removeCard(int order, Deck deck) { cardList.remove(order); }
+    public void flipCard(int order, boolean which) { cardList.get(order).setFace(which); }
+    // setter
+        ;
+    // getter
+    public Card getCard(int order) { return cardList.get(order); }
+    public int getCardNo(int order) { return cardList.get(order).getNumber(); }
+    public String getCardSuit(int order) { return cardList.get(order).getSuit(); }
+    public boolean getCardFace(int order) { return cardList.get(order).isFace(); }
+    public int getCardAmount() { return cardList.size(); }
 
-    public void removeCard(int order, Deck deck) {
-        final Card removeCard = cardList.get(order);
-        deck.back(removeCard);
-        cardList.remove(order);
-    }
-
-    public void fripCard(int order, boolean which) {
-        final Card selectedCard = cardList.get(order);
-        selectedCard.setFace(which);
-    }
-
-    public int calcHands() {
+    /* 点数計算関連 */
+    public int calc() {
         int total = 0;
         int aceCount = 0;
-        for (int i = 0; i < cardList.size(); ++i) {
-            if ((cardList.get(i).getNumber()) != 1) {
-                total += bjNormalize(cardList.get(i).getNumber());
-            } else {
-                total += bjNormalize(cardList.get(i).getNumber());
-                ++aceCount;
-            }
+        for (Card card : cardList) {
+            total += normalize(card.getNumber());
+            aceCount += (card.getNumber() == 1) ? 1 : 0;
         }
-        total = bjNormalize(total, aceCount);
+        // ace
+        total = aceAddition(total, aceCount);
         return total;
     }
-
-    private int bjNormalize(int value) {
-        int fixed = value;
-        if (value > 10)
-            fixed = 10;
-        return fixed;
-    }
-
-    private int bjNormalize(int total, int aceCount) {
+    private int normalize(int value) { return Math.min(value, 10); }
+    private int aceAddition(int total, int aceCount) {
         int unResolvedAce = aceCount;
         int fixed = total;
         while (12 > fixed && unResolvedAce > 0) {
@@ -54,30 +42,5 @@ public class Hand {
             --unResolvedAce;
         }
         return fixed;
-    }
-
-    public String getCard(int order) {
-        final int cardNo = cardList.get(order).getNumber();
-        final String cardSuit = cardList.get(order).getSuit();
-        return "[" + cardNo + " / " + cardSuit + "]";
-    }
-
-    public int getCardNo(int order) {
-        final int cardNo = cardList.get(order).getNumber();
-        return cardNo;
-    }
-
-    public String getCardSuit(int order) {
-        final String cardSuit = cardList.get(order).getSuit();
-        return cardSuit;
-    }
-
-    public boolean getCardFace(int order) {
-        final boolean cardFace = cardList.get(order).isFace();
-        return cardFace;
-    }
-
-    public int getCardAmount() {
-        return cardList.size();
     }
 }

@@ -2,39 +2,29 @@
 public class Money {
     // member
     private int value;
-    private final int max = 99999;
-    private final int min = 0;
 
-    public Money() {
-        // for dealer
-        this.value = 0;
-    }
+    /* コンストラクタ */
+    public Money() { this.value = 0; }
+    public Money(int initValue) { normalize(this.value = initValue); }
 
-    public Money(int initValue) {
-        this.value = initValue;
-        normalize(this.value);
-    }
+    /* 増減 */
+    public void addition(int mod) { normalize(value += mod); }
+    public void subtraction(int mod) { normalize(value -= mod); }
 
-    public void addition(int value) {
-        this.value += value;
-        normalize(this.value);
-    }
-
-    public void subtraction(int value) {
-        this.value -= value;
-        normalize(this.value);
-    }
-
-    private int normalize(int currentValue) {
+    /* 正規範囲に修正 */
+    private void normalize(int currentValue) {
+        final int max = 99999;
+        final int min = 0;
         int fixedValue = currentValue;
         if (fixedValue > max)
             fixedValue = max;
         if (min > fixedValue)
             fixedValue = min;
-        return fixedValue;
+        value = fixedValue;
     }
 
-    public int getValue() {
-        return value;
-    }
+    // setter
+        ;
+    // getter
+    public int getValue() { return value; }
 }
