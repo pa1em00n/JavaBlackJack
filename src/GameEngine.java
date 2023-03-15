@@ -8,25 +8,18 @@ public class GameEngine {
         this.mode = mode;
 
         switch (this.mode) {
-            case MODE_TITLE:
-                titleEngine = new TitleEngine();
-                break;
-            case MODE_BJ:
-                bjEngine = new BjEngine();
-                break;
-            default:
-                break;
+            case MODE_TITLE -> titleEngine = new TitleEngine();
+            case MODE_BJ -> bjEngine = new BjEngine();
+            default -> {
+            }
         }
     }
 
     public Object getEngine() {
-        switch (mode) {
-            case MODE_TITLE:
-                return titleEngine;
-            case MODE_BJ:
-                return bjEngine;
-            default:
-                return false;
-        }
+        return switch (mode) {
+            // case MODE_TITLE -> titleEngine;
+            case MODE_BJ -> bjEngine;
+            default -> false;
+        };
     }
 }

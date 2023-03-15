@@ -2,13 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 
 public class GameWindow extends JFrame {
-
-    private GamePanel gamePanel;
-    private final int windowX = 800;
-    private final int windowY = 600;
     public GameWindow() {
         /* create window */
         super();
+        final int windowX = 800;
+        final int windowY = 600;
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
@@ -18,11 +16,6 @@ public class GameWindow extends JFrame {
         setSize(width, height);
 
         /* create panel */
-        gamePanel = new GamePanel(windowX, windowY);
-    }
-
-    public void redraw(GameEngine engine) {
-
-        gamePanel.repaint();
+        add(new GamePanel(windowX, windowY));
     }
 }
