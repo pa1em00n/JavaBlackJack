@@ -11,7 +11,7 @@ public class BjEngine {
     }
 
     /* ディーラーの追加 */
-    private void joinDealer() {
+    public void joinDealer() {
         Player newPlayer = new Player(playerList.size());
         playerList.add(newPlayer);
     }
