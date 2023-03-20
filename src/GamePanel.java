@@ -27,6 +27,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     private JTextField nameInput;
     private boolean isInitializingGame;
     private int betValue;
+    private int gameResultJudge = -2;
 
     public GamePanel() {
         super();
@@ -99,7 +100,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     }
     private void standEngine() {
         engine.dealerAi();
-        System.out.println(engine.compare());
+        gameResultJudge = engine.compare();
     }
     private void resultEngine(){}
 
@@ -270,6 +271,12 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             if (i != 0) {
                 if (engine.getDealerCard(i-1).getAnimationPhase() == 2) comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
             } else comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
+        }
+        // テキスト - 勝敗
+        switch(gameResultJudge) {
+            case -1 -> comp.centeringText(g2, "LOSE", 400,300, Color.BLUE, 2, Color.WHITE);
+            case 0 -> comp.centeringText(g2, "DRAW", 400,300, Color.YELLOW, 2, Color.WHITE);
+            case 1 -> comp.centeringText(g2, "WIN", 400,300, Color.RED, 2, Color.WHITE);
         }
     }
     private void resultDraw(Graphics2D g2){}
