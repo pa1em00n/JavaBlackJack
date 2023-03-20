@@ -3,13 +3,79 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Array;
 
 public class DrawComponents {
     private BufferedImage BG;
+    private BufferedImage[] card = new BufferedImage[54];
+    private String[] cardSrcList = {
+            "./img/card/card_back.png",
+            "./img/card/card_spade_01.png",
+            "./img/card/card_spade_02.png",
+            "./img/card/card_spade_03.png",
+            "./img/card/card_spade_04.png",
+            "./img/card/card_spade_05.png",
+            "./img/card/card_spade_06.png",
+            "./img/card/card_spade_07.png",
+            "./img/card/card_spade_08.png",
+            "./img/card/card_spade_09.png",
+            "./img/card/card_spade_10.png",
+            "./img/card/card_spade_11.png",
+            "./img/card/card_spade_12.png",
+            "./img/card/card_spade_13.png",
+            "./img/card/card_heart_01.png",
+            "./img/card/card_heart_02.png",
+            "./img/card/card_heart_03.png",
+            "./img/card/card_heart_04.png",
+            "./img/card/card_heart_05.png",
+            "./img/card/card_heart_06.png",
+            "./img/card/card_heart_07.png",
+            "./img/card/card_heart_08.png",
+            "./img/card/card_heart_09.png",
+            "./img/card/card_heart_10.png",
+            "./img/card/card_heart_11.png",
+            "./img/card/card_heart_12.png",
+            "./img/card/card_heart_13.png",
+            "./img/card/card_diamond_01.png",
+            "./img/card/card_diamond_02.png",
+            "./img/card/card_diamond_03.png",
+            "./img/card/card_diamond_04.png",
+            "./img/card/card_diamond_05.png",
+            "./img/card/card_diamond_06.png",
+            "./img/card/card_diamond_07.png",
+            "./img/card/card_diamond_08.png",
+            "./img/card/card_diamond_09.png",
+            "./img/card/card_diamond_10.png",
+            "./img/card/card_diamond_11.png",
+            "./img/card/card_diamond_12.png",
+            "./img/card/card_diamond_13.png",
+            "./img/card/card_club_01.png",
+            "./img/card/card_club_02.png",
+            "./img/card/card_club_03.png",
+            "./img/card/card_club_04.png",
+            "./img/card/card_club_05.png",
+            "./img/card/card_club_06.png",
+            "./img/card/card_club_07.png",
+            "./img/card/card_club_08.png",
+            "./img/card/card_club_09.png",
+            "./img/card/card_club_10.png",
+            "./img/card/card_club_11.png",
+            "./img/card/card_club_12.png",
+            "./img/card/card_club_13.png",
+            "./img/card/card_joker.png"
+    };
+    private BufferedImage[] chip = new BufferedImage[2];
+    private String[] chipSrcList = {
+            "./img/chip/chip_vertical.png",
+            "./img/chip/chip_perspective.png"
+    };
     private int fadePhase = 0;
     private int textAlpha = 0;
     private int lineBgPosition = 800;
     private int wait = 0;
+    private final int CARD_BACK = 0;
+    private int deckTopY = 0;
+    private int[] cardPhase = {0,0,0,0,0,0,0,0,0,0};
 
     public DrawComponents() {
         fadePhase = 0;
@@ -19,6 +85,8 @@ public class DrawComponents {
     public void bufferInclude() {
         try {
             BG = ImageIO.read(new File("./img/bg.png"));
+            for(int i=0; i<cardSrcList.length; ++i) { card[i] = ImageIO.read(new File(cardSrcList[i])); }
+            for(int i=0; i<chipSrcList.length; ++i) { chip[i] = ImageIO.read(new File(cardSrcList[i])); }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -57,6 +125,7 @@ public class DrawComponents {
         g2.setColor(color);
         g2.drawString(text, x, y);
     }
+    // 中央に帯付きテキスト表示
     public void textCenterLineBack (Graphics2D g2, String line1, String line2) {
         g2.setColor(new Color(0,0,0,60));
         g2.fillRect(lineBgPosition,220, 800, 110);
@@ -100,7 +169,94 @@ public class DrawComponents {
              */
         }
     }
+    // デッキ
+    public void deckDraw(Graphics2D g2 ,int x, int y) {
+        g2.drawImage(card[CARD_BACK], x, y, 80,120,null);
+        if (y > deckTopY) deckTopY = y;
+    }
+    // 手札
+    public void myHandDraw(Graphics2D g2, int order, Card myCard) {
+        final int suitToNo;
+        switch (myCard.getAnimationPhase()) {
+            case 0 -> {
+                myCard.setPosX(350);
+                myCard.setPosY(deckTopY);
+                myCard.setAnimationPhase(1);
+            }
+            case 1 -> {
+                final int xMoveLength = (Math.abs(350 - (100+(order*90))) == 0) ? 1 : Math.abs(350 - (100+(order*90)));
+                final int yMoveLength = 200;
+                if (350 - (100+(order*90)) >= 0) {
+                    if (myCard.getPosX() > 100+(order*90)) myCard.modPosX(-15);
+                    if (myCard.getPosY() < deckTopY+200) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() <= 100+(order*90)) myCard.setPosX(100+(order*90));
+                    if (myCard.getPosY() >= deckTopY+200) myCard.setPosY(deckTopY+200);
+                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
+                    if ((myCard.getPosX() <= 100+(order*90)) && (myCard.getPosY() >= deckTopY+200)) myCard.setAnimationPhase(2);
+                } else {
+                    if (myCard.getPosX() < 100+(order*90)) myCard.modPosX(15);
+                    if (myCard.getPosY() < deckTopY+200) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() >= 100+(order*90)) myCard.setPosX(100+(order*90));
+                    if (myCard.getPosY() >= deckTopY+200) myCard.setPosY(deckTopY+200);
+                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
+                    if ((myCard.getPosX() >= 100+(order*90)) && (myCard.getPosY() >= deckTopY+200)) myCard.setAnimationPhase(2);
+                }
+            }
+            case 2 -> {
+                switch (myCard.getSuit()) {
+                    case "Spade" -> suitToNo = 0;
+                    case "Heart" -> suitToNo = 1;
+                    case "Diamond" -> suitToNo = 2;
+                    case "Club" -> suitToNo = 3;
+                    default -> suitToNo = -1;
+                }
+                if (suitToNo == -1) return;
+                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 100 + (order*90), deckTopY+200, 80,120,null);
+            }
+        }
+    }
+    public void opponentHandDraw(Graphics2D g2, int order, Card myCard) {
+        final int suitToNo;
+        switch (myCard.getAnimationPhase()) {
+            case 0 -> {
+                myCard.setPosX(350);
+                myCard.setPosY(deckTopY);
+                myCard.setAnimationPhase(1);
+            }
+            case 1 -> {
+                final int xMoveLength = (Math.abs(350 - (620 - (order*90))) == 0) ? 1 : Math.abs(350 - (620 - (order*90)));
+                final int yMoveLength = 160;
+                if (350 - (620 - (order*90)) >= 0) {
+                    if (myCard.getPosX() > 620 - (order*90)) myCard.modPosX(-15);
+                    if (myCard.getPosY() > deckTopY-160) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() < 620 - (order*90)) myCard.setPosX(620 - (order*90));
+                    if (myCard.getPosY() < deckTopY-160) myCard.setPosY(deckTopY-160);
+                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
+                    if ((myCard.getPosX() <= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-160)) myCard.setAnimationPhase(2);
+                } else {
+                    if (myCard.getPosX() < 620 - (order*90)) myCard.modPosX(15);
+                    if (myCard.getPosY() > deckTopY-160) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() > 620 - (order*90)) myCard.setPosX(620 - (order*90));
+                    if (myCard.getPosY() < deckTopY-160) myCard.setPosY(deckTopY-160);
+                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
+                    if ((myCard.getPosX() >= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-160)) myCard.setAnimationPhase(2);
+                }
 
+            }
+            case 2 -> {
+                switch (myCard.getSuit()) {
+                    case "Spade" -> suitToNo = 0;
+                    case "Heart" -> suitToNo = 1;
+                    case "Diamond" -> suitToNo = 2;
+                    case "Club" -> suitToNo = 3;
+                    default -> suitToNo = -1;
+                }
+                if (suitToNo == -1) return;
+                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 620 - (order*90), deckTopY-160, 80,120,null);
+            }
+        }
+    }
+    // 墓地
     public int getFadePhase() { return fadePhase; }
 
     public void setFadePhase(int fadePhase) { this.fadePhase = fadePhase; }

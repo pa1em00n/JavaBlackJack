@@ -32,4 +32,6 @@ public class Deck {
     public void shuffle() {
         Collections.shuffle(cardList);
     }
+    // getter
+    public int getAmount() { return cardList.size(); }
 }

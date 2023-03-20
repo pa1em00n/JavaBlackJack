@@ -4,10 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JPanel;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 
@@ -28,12 +24,23 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     private String setting_DESC = "";
     private JButton game5Btn, game10Btn, endlessBtn, gotoBetBtn;
     private final DrawComponents comp = new DrawComponents();
+    private JTextField nameInput;
+    private boolean isInitializingGame;
+    private int betValue;
 
     public GamePanel() {
         super();
-        comp.bufferInclude();
+        setLayout(null);
+        try {
+            comp.bufferInclude();
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
         postTtlComponents();
         ttlEngine();
+        setVisible(true);
     }
     @Override
     public void run() {
@@ -72,13 +79,28 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     // 名前入力
     private void nameEngine(){ engine = new BjEngine(); }
     // 賭け金入力
-    private void betEngine(){
-        // ディーラーの参加
-        engine.joinDealer();
-        // プレイヤーの参加
-        engine.joinPlayer(setting_name);
+    private void betEngine(){ engine.bet(betValue); }
+    // ゲームエンジン
+    private void gameEngine(){
+        // 開始処理
+        if (isInitializingGame) {
+            // ディーラーの参加
+            engine.joinDealer();
+            // プレイヤーの参加
+            setting_name = nameInput.getText();
+            engine.joinPlayer(setting_name);
+            isInitializingGame = false;
+        }
+        // 初手配置
+        engine.gameInit();
     }
-    private void gameEngine(){}
+    private void hitEngine() {
+        engine.hit(engine.player());
+    }
+    private void standEngine() {
+        engine.dealerAi();
+        System.out.println(engine.compare());
+    }
     private void resultEngine(){}
 
     /* コンポーネント描画メソッド */
@@ -114,7 +136,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     private void postNameInputComponents() {
         // テキストボックス
         // 名前入力
-        JTextField nameInput = new JTextField("名前を入力してください",0) {
+        nameInput = new JTextField("名前を入力してください",0) {
             /* 角丸にするメソッド */
             @Override
             protected void paintComponent(Graphics g) {
@@ -164,13 +186,26 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // 開始ボタン
         gotoBetBtn = new JButton("開始！");
         gotoBetBtn.setBounds(250,500,300,80);
-        gotoBetBtn.setActionCommand("gotoBet");
+        gotoBetBtn.setActionCommand("gotoGame");
         gotoBetBtn.addActionListener(this);
         gotoBetBtn.setEnabled(false);
         add(gotoBetBtn);
     }
     private void postBetComponents() {}
-    private void postGameComponents() {}
+    private void postGameComponents() {
+        // ヒット
+        JButton hitBtn = new JButton("ヒット");
+        hitBtn.setBounds(600,400,120,80);
+        hitBtn.setActionCommand("gosubHit");
+        hitBtn.addActionListener(this);
+        add(hitBtn);
+        // スタンド
+        JButton standBtn = new JButton("スタンド");
+        standBtn.setBounds(600,500,120,80);
+        standBtn.setActionCommand("gosubStand");
+        standBtn.addActionListener(this);
+        add(standBtn);
+    }
     private void postResultComponents() {}
 
     /* 動的要素描画メソッド */
@@ -215,12 +250,28 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         }
     }
     private void betDraw(Graphics2D g2){
+
+    }
+    private void gameDraw(Graphics2D g2){
         // 背景
         comp.bgDraw(g2);
+        // スプライト - 山札
+        for(int i=0; i<engine.getDeckNumber(); ++i) comp.deckDraw(g2, 350, 160 + i/2);
         // アニメーション - ゲーム開始フェード
         comp.textCenterLineBack(g2, "GAME","START");
+        if (comp.getFadePhase() != -1) return;
+        // スプライト - 手札
+        for(int i=0; i<engine.getPlayerHandAmount(); ++i) {
+            if (i != 0) {
+                if (engine.getPlayerCard(i - 1).getAnimationPhase() == 2) comp.myHandDraw(g2, i, engine.getPlayerCard(i));
+            } else comp.myHandDraw(g2, i, engine.getPlayerCard(i));
+        }
+        for(int i=0; i<engine.getDealerHandAmount(); ++i) {
+            if (i != 0) {
+                if (engine.getDealerCard(i-1).getAnimationPhase() == 2) comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
+            } else comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
+        }
     }
-    private void gameDraw(Graphics2D g2){}
     private void resultDraw(Graphics2D g2){}
 
     /* 画面遷移*/
@@ -265,19 +316,24 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 endlessBtn.setForeground(Color.RED);
                 gotoBetBtn.setEnabled(true);
             }
-            case "gotoBet" -> {
+            case "gosubBet" -> {
                 betEngine();
-                removeAll();
                 scene = "bet";
                 postBetComponents();
             }
             case "gotoGame" -> {
+                isInitializingGame = true;
                 gameEngine();
                 removeAll();
+                scene = "game";
                 postGameComponents();
             }
-            case "gosubHit" -> {}
-            case "gosubStand" -> {}
+            case "gosubHit" -> {
+                hitEngine();
+            }
+            case "gosubStand" -> {
+                standEngine();
+            }
             case "gotoResult" -> {
                 resultEngine();
                 removeAll();

@@ -50,6 +50,7 @@ public class Player {
     // setter
         ;
     // getter
+    public Card getCard(int order) { return hand.getCard(order); }
     public int getCardNo(int order) { return hand.getCardNo(order); }
     public String getCardSuit(int order) { return hand.getCardSuit(order); }
     public boolean getCardFace(int order) { return hand.getCardFace(order); }
