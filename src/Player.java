@@ -43,8 +43,8 @@ public class Player {
     /* 手札関連 */
     public void draw(Deck deck) { hand.addCard(deck.pick()); }
     public void discard(int order, Deck deck) {
-        hand.removeCard(order, deck);
         deck.back(hand.getCard(order));
+        hand.removeCard(order, deck);
     }
     public void flip(int order, boolean which) { hand.flipCard(order, which); }
     // setter

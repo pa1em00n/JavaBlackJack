@@ -28,7 +28,10 @@ public class Deck {
         cardList.remove(0);
         return pickedCard;
     }
-    public void back(Card discarded) { cardList.add(discarded); }
+    public void back(Card discarded) {
+        cardList.add(discarded);
+        discarded.setAnimationPhase(0);
+    }
     public void shuffle() {
         Collections.shuffle(cardList);
     }

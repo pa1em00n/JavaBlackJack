@@ -119,6 +119,8 @@ public class BjEngine {
     public int getDeckNumber() { return deck.getAmount(); }
     public int getPlayerHandAmount() { return player().getCardAmount(); }
     public int getDealerHandAmount() { return dealer().getCardAmount(); }
+    public int getPlayerHandCalc() { return player().getHandTotal(); }
+    public int getDealerHandCalc() { return dealer().getHandTotal(); }
     public Card getPlayerCard(int order) { return player().getCard(order); }
     public int getPlayerCardNo(int order) { return player().getCardNo(order); }
     public String getPlayerCardSuit(int order) { return player().getCardSuit(order);}

@@ -69,16 +69,16 @@ public class DrawComponents {
             "./img/chip/chip_vertical.png",
             "./img/chip/chip_perspective.png"
     };
-    private int fadePhase = 0;
-    private int textAlpha = 0;
-    private int lineBgPosition = 800;
-    private int wait = 0;
+    private int fadePhaseII = 0;
     private final int CARD_BACK = 0;
     private int deckTopY = 0;
     private int[] cardPhase = {0,0,0,0,0,0,0,0,0,0};
+    private TextCenterLineBack textCenterLineBack;
+    private FadeInCenterText fadeInCenterText;
 
     public DrawComponents() {
-        fadePhase = 0;
+        textCenterLineBack = new TextCenterLineBack();
+        fadeInCenterText = new FadeInCenterText();
     }
 
     /* 画像読み込み */
@@ -86,7 +86,7 @@ public class DrawComponents {
         try {
             BG = ImageIO.read(new File("./img/bg.png"));
             for(int i=0; i<cardSrcList.length; ++i) { card[i] = ImageIO.read(new File(cardSrcList[i])); }
-            for(int i=0; i<chipSrcList.length; ++i) { chip[i] = ImageIO.read(new File(cardSrcList[i])); }
+            for(int i=0; i<chipSrcList.length; ++i) { chip[i] = ImageIO.read(new File(chipSrcList[i])); }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,49 +125,32 @@ public class DrawComponents {
         g2.setColor(color);
         g2.drawString(text, x, y);
     }
+    public void centeringTextWithEdge(Graphics2D g2, String text, int x, int y, Color color, int edgeDepth, Color shadowColor){
+        FontMetrics fm = g2.getFontMetrics();
+        Rectangle rectText = fm.getStringBounds(text, g2).getBounds();
+        x=x-rectText.width/2;
+        y=y-rectText.height/2+fm.getMaxAscent();
+        // ふち
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+        g2.setColor(shadowColor);
+        g2.drawString(text, x-edgeDepth, y-edgeDepth);
+        g2.drawString(text, x-edgeDepth, y+edgeDepth);
+        g2.drawString(text, x+edgeDepth, y-edgeDepth);
+        g2.drawString(text, x+edgeDepth, y+edgeDepth);
+        // 本文
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setColor(color);
+        g2.drawString(text, x, y);
+    }
     // 中央に帯付きテキスト表示
+    public void textCenterLineBack (Graphics2D g2, String line) {
+        textCenterLineBack.call(g2);
+        centeringText(g2, line, 400, 275, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
+    }
     public void textCenterLineBack (Graphics2D g2, String line1, String line2) {
-        g2.setColor(new Color(0,0,0,60));
-        g2.fillRect(lineBgPosition,220, 800, 110);
-        g2.setFont(new Font("メイリオ",Font.PLAIN,50));
-        centeringText(g2,line1, 400, 245, new Color(255, 255, 255, textAlpha), 4, new Color(0,0,0,textAlpha / 4));
-        centeringText(g2,line2, 400, 305, new Color(255, 255, 255, textAlpha), 4, new Color(0,0,0,textAlpha / 4));
-        switch (fadePhase) {
-            case 0 -> {
-                if (textAlpha < 255) {
-                    textAlpha += 20;
-                    if (lineBgPosition != 0) lineBgPosition -= 160;
-                }
-                if (textAlpha >= 255) {
-                    textAlpha = 255;
-                    fadePhase = 1;
-                    wait = 30;
-                }
-            }
-            case 1 -> {
-                if (wait <= 0) fadePhase = 2;
-                --wait;
-            }
-            case 2 -> {
-                if (textAlpha <= 255) {
-                    textAlpha -= 20;
-                    if (lineBgPosition != -800) lineBgPosition -= 160;
-                }
-                if (textAlpha <= 0) {
-                    textAlpha = 0;
-                    fadePhase = -1;
-                }
-            }
-            /*
-            case -1 -> {
-                // reset
-                textAlpha = 0;
-                fadePhase = 0;
-                wait = 0;
-                lineBgPosition = 800;
-            }
-             */
-        }
+        textCenterLineBack.call(g2);
+        centeringText(g2,line1, 400, 245, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
+        centeringText(g2,line2, 400, 305, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
     }
     // デッキ
     public void deckDraw(Graphics2D g2 ,int x, int y) {
@@ -185,21 +168,21 @@ public class DrawComponents {
             }
             case 1 -> {
                 final int xMoveLength = (Math.abs(350 - (100+(order*90))) == 0) ? 1 : Math.abs(350 - (100+(order*90)));
-                final int yMoveLength = 200;
+                final int yMoveLength = 160;
                 if (350 - (100+(order*90)) >= 0) {
                     if (myCard.getPosX() > 100+(order*90)) myCard.modPosX(-15);
-                    if (myCard.getPosY() < deckTopY+200) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
-                    if (myCard.getPosX() <= 100+(order*90)) myCard.setPosX(100+(order*90));
-                    if (myCard.getPosY() >= deckTopY+200) myCard.setPosY(deckTopY+200);
+                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() < 100+(order*90)) myCard.setPosX(100+(order*90));
+                    if (myCard.getPosY() > deckTopY+160) myCard.setPosY(deckTopY+160);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() <= 100+(order*90)) && (myCard.getPosY() >= deckTopY+200)) myCard.setAnimationPhase(2);
+                    if ((myCard.getPosX() <= 100+(order*90)) && (myCard.getPosY() >= deckTopY+160)) myCard.setAnimationPhase(2);
                 } else {
                     if (myCard.getPosX() < 100+(order*90)) myCard.modPosX(15);
-                    if (myCard.getPosY() < deckTopY+200) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
-                    if (myCard.getPosX() >= 100+(order*90)) myCard.setPosX(100+(order*90));
-                    if (myCard.getPosY() >= deckTopY+200) myCard.setPosY(deckTopY+200);
+                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() > 100+(order*90)) myCard.setPosX(100+(order*90));
+                    if (myCard.getPosY() > deckTopY+160) myCard.setPosY(deckTopY+160);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() >= 100+(order*90)) && (myCard.getPosY() >= deckTopY+200)) myCard.setAnimationPhase(2);
+                    if ((myCard.getPosX() >= 100+(order*90)) && (myCard.getPosY() >= deckTopY+160)) myCard.setAnimationPhase(2);
                 }
             }
             case 2 -> {
@@ -211,7 +194,7 @@ public class DrawComponents {
                     default -> suitToNo = -1;
                 }
                 if (suitToNo == -1) return;
-                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 100 + (order*90), deckTopY+200, 80,120,null);
+                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 100 + (order*90), deckTopY+160, 80,120,null);
             }
         }
     }
@@ -225,23 +208,22 @@ public class DrawComponents {
             }
             case 1 -> {
                 final int xMoveLength = (Math.abs(350 - (620 - (order*90))) == 0) ? 1 : Math.abs(350 - (620 - (order*90)));
-                final int yMoveLength = 160;
+                final int yMoveLength = 200;
                 if (350 - (620 - (order*90)) >= 0) {
                     if (myCard.getPosX() > 620 - (order*90)) myCard.modPosX(-15);
-                    if (myCard.getPosY() > deckTopY-160) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
                     if (myCard.getPosX() < 620 - (order*90)) myCard.setPosX(620 - (order*90));
-                    if (myCard.getPosY() < deckTopY-160) myCard.setPosY(deckTopY-160);
+                    if (myCard.getPosY() < deckTopY-200) myCard.setPosY(deckTopY-200);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() <= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-160)) myCard.setAnimationPhase(2);
+                    if ((myCard.getPosX() <= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-200)) myCard.setAnimationPhase(2);
                 } else {
                     if (myCard.getPosX() < 620 - (order*90)) myCard.modPosX(15);
-                    if (myCard.getPosY() > deckTopY-160) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
                     if (myCard.getPosX() > 620 - (order*90)) myCard.setPosX(620 - (order*90));
-                    if (myCard.getPosY() < deckTopY-160) myCard.setPosY(deckTopY-160);
+                    if (myCard.getPosY() < deckTopY-200) myCard.setPosY(deckTopY-200);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() >= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-160)) myCard.setAnimationPhase(2);
+                    if ((myCard.getPosX() >= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-200)) myCard.setAnimationPhase(2);
                 }
-
             }
             case 2 -> {
                 switch (myCard.getSuit()) {
@@ -252,12 +234,26 @@ public class DrawComponents {
                     default -> suitToNo = -1;
                 }
                 if (suitToNo == -1) return;
-                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 620 - (order*90), deckTopY-160, 80,120,null);
+                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 620 - (order*90), deckTopY-200, 80,120,null);
             }
         }
     }
-    // 墓地
-    public int getFadePhase() { return fadePhase; }
-
-    public void setFadePhase(int fadePhase) { this.fadePhase = fadePhase; }
+    // ポイント台
+    public void pointTableDraw(Graphics2D g2) {
+        g2.drawImage(chip[0], 116, 265,216, 373, (1328 / 4) * 2, (708 / 2), (1328 / 4) * 3, (708 / 2) * 2, null);
+        g2.drawImage(chip[0], 587, 125, 687, 233, (1328 / 4) * 2, (708 / 2), (1328 / 4) * 3, (708 / 2) * 2, null);
+        /* 画像サイズ
+        0.93 : 1
+        (332, 354)
+         */
+    }
+    // 勝敗
+    public void fadeInCenterText(Graphics2D g2, String text, int x, int y, int r, int g, int b, int edgeDepth,int sr, int sg, int sb){
+        fadeInCenterText.call(g2);
+        centeringTextWithEdge(g2, text, x,y, new Color(r,g,b,fadeInCenterText.getTextAlpha()), edgeDepth, new Color(sr,sg,sb,fadeInCenterText.getTextAlpha()));
+    }
+    public int getLFadePhase() { return textCenterLineBack.getFadePhase(); }
+    public void resetLFade() {textCenterLineBack.reSet();}
+    public int getTFadePhase() { return fadeInCenterText.getFadePhase(); }
+    public void resetTFade() {fadeInCenterText.reSet();}
 }
