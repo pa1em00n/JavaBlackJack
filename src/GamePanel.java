@@ -24,7 +24,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     private String setting_DESC = "";
     private JButton game5Btn, game10Btn, endlessBtn, gotoBetBtn;
     private final DrawComponents comp = new DrawComponents();
-    private JTextField nameInput;
+    private JTextField nameInput, betInput;
     private boolean isInitializingGame;
     private boolean isMyTurn;
     private int betValue;
@@ -33,6 +33,11 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     private int gamecount = 1;
     private int gameMax = 0;
     private JButton hitBtn, standBtn;
+    private int winCount, loseCount;
+    private String[] rankerName = {"MUR", "AIG", "ATU", "KUT", "TA.", ""};
+    private int[] rankerWins = {6, 5, 4, 3, 2, -1};
+    private int[] rankerLoses = {4, 5, 6, 7, 8, -1};
+    private int[] rankerMoneys = {2000, 1500, 1200, 1000, 700, -1};
 
     public GamePanel() {
         super();
@@ -70,6 +75,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         switch (scene) {
             case "ttl" -> ttlDraw(g2);
             case "setting" -> settingDraw(g2);
+            case "bet" -> betDraw(g2);
             case "game" -> gameDraw(g2);
             case "result" -> resultDraw(g2);
             default -> {
@@ -84,9 +90,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     // 名前入力
     private void nameEngine(){ engine = new BjEngine(); }
     // 賭け金入力
-    private void betEngine(){ engine.bet(betValue); }
-    // ゲームエンジン
-    private void gameEngine(){
+    private void betEngine(){
         // 開始処理
         if (isInitializingGame) {
             // ディーラーの参加
@@ -95,7 +99,18 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             setting_name = nameInput.getText();
             engine.joinPlayer(setting_name);
             isInitializingGame = false;
+            // 変数初期化
+            winCount = 0;
+            loseCount = 0;
+            gamecount = 1;
         }
+        // ベット初期化
+        engine.bet(0);
+    }
+    // ゲームエンジン
+    private void gameEngine(){
+        // ベット
+        engine.bet(Integer.parseInt(betInput.getText()));
         // 初手配置
         engine.gameInit();
         // 自分ターン
@@ -114,8 +129,27 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         isMyTurn = false;
         if (engine.player().getHandTotal() <= 21) engine.dealerAi();
         gameResultJudge = engine.compare();
+        switch (gameResultJudge) {
+            case -1 -> ++loseCount;
+            case 1 -> ++winCount;
+        }
     }
-    private void resultEngine(){}
+    private void resultEngine(){
+        // ランクインか
+        for(int i=4; i>0; --i) {
+            if (engine.player().getMoneyValue() > rankerMoneys[i]) {
+                rankerName[i+1] = rankerName[i];
+                rankerWins[i+1] = rankerWins[i];
+                rankerLoses[i+1] = rankerLoses[i];
+                rankerMoneys[i+1] = rankerMoneys[i];
+
+                rankerName[i] = engine.player().getName();
+                rankerWins[i] = winCount;
+                rankerLoses[i] = loseCount;
+                rankerMoneys[i] = engine.player().getMoneyValue();
+            }
+        }
+    }
 
     /* コンポーネント描画メソッド */
     private void postTtlComponents() {
@@ -200,12 +234,49 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // 開始ボタン
         gotoBetBtn = new JButton("開始！");
         gotoBetBtn.setBounds(250,500,300,80);
-        gotoBetBtn.setActionCommand("gotoGame");
+        gotoBetBtn.setActionCommand("gotoBet");
         gotoBetBtn.addActionListener(this);
         gotoBetBtn.setEnabled(false);
         add(gotoBetBtn);
     }
-    private void postBetComponents() {}
+    private void postBetComponents() {
+        // ベット入力欄
+        // テキストフィールド
+        betInput = new JTextField("0",0) {
+            /* 角丸にするメソッド */
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque()) {
+                    int w = getWidth() - 1;
+                    int h = getHeight() - 1;
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setPaint(UIManager.getColor("TextField.background"));
+                    g2.fillRoundRect(0, 0, w, h, h, h);
+                    g2.setPaint(Color.GRAY);
+                    g2.drawRoundRect(0, 0, w, h, h, h);
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+
+            @Override
+            public void updateUI() {
+                super.updateUI();
+                setOpaque(false);
+                setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+            }
+        };;
+        betInput.setBounds(100,450,200,40);
+        betInput.setFont(new Font("メイリオ",Font.PLAIN,18));
+        add(betInput);
+        // ベット
+        JButton betBtn = new JButton("確定");
+        betBtn.setBounds(50,520,120,60);
+        betBtn.setActionCommand("gosubGame");
+        betBtn.addActionListener(this);
+        add(betBtn);
+    }
     private void postGameComponents() {
         // ヒット
         hitBtn = new JButton("ヒット");
@@ -220,7 +291,14 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         standBtn.addActionListener(this);
         add(standBtn);
     }
-    private void postResultComponents() {}
+    private void postResultComponents() {
+        // 開始ボタン
+        JButton ttlBtn = new JButton("タイトルへ");
+        ttlBtn.setBounds(250,500,300,80);
+        ttlBtn.setActionCommand("gotoTtl");
+        ttlBtn.addActionListener(this);
+        add(ttlBtn);
+    }
 
     /* 動的要素描画メソッド */
     // タイトル
@@ -263,6 +341,30 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             comp.centeringText(g2,setting_DESC, 400, 420);
         }
     }
+    private void betDraw(Graphics2D g2) {
+        // 背景
+        comp.bgDraw(g2);
+        // スプライト - 山札
+        for(int i=0; i<engine.getDeckNumber(); ++i) comp.deckDraw(g2, 360, 220 - i/2);
+        // 矩形 - 資金
+        g2.setColor(Color.BLACK);
+        g2.drawRect(20,160, 200, 80);
+        g2.drawRect(22,162, 196, 76);
+        g2.setColor(Color.lightGray);
+        g2.fillRect(23, 163, 194, 74);
+        // テキスト - 資金
+        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+        g2.setColor(Color.BLACK);
+        g2.drawString("総資金："+engine.player().getMoneyValue(),25,193);
+        // テキスト - ベット
+        g2.drawLine(27, 198, 215, 198);
+        g2.drawString("賭け金："+engine.player().getBet(),25,220);
+        // テキスト - ベット
+        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+        comp.shadowedText(g2, "賭け金：",20,475, Color.BLACK, 2, new Color(255,255,255,60));
+        // アニメーション - ゲーム開始フェード
+        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gamecount : "GAME "+gamecount+" / "+gameMax);
+    }
     private void gameDraw(Graphics2D g2){
         boolean writtenHands = true;
         // 背景
@@ -292,6 +394,19 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             } else comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
         }
         comp.pointTableDraw(g2);
+        // 矩形 - 資金
+        g2.setColor(Color.BLACK);
+        g2.drawRect(20,160, 200, 80);
+        g2.drawRect(22,162, 196, 76);
+        g2.setColor(Color.lightGray);
+        g2.fillRect(23, 163, 194, 74);
+        // テキスト - 資金
+        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+        g2.setColor(Color.BLACK);
+        g2.drawString("総資金："+engine.player().getMoneyValue(),25,193);
+        // テキスト - ベット
+        g2.drawLine(27, 198, 215, 198);
+        g2.drawString("賭け金："+engine.player().getBet(),25,220);
         // テキスト - 点数
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("メイリオ",Font.PLAIN,30));
@@ -313,27 +428,62 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 case 1 -> comp.fadeInCenterText(g2, "WIN", 400, 300, 255, 0, 0, 2, 255, 255, 255);
             }
             if (comp.getTFadePhase() == -1) {
-                gameResultJudge = -2;
+                gameResultJudge = -3;
                 comp.resetTFade();
-                comp.resetLFade();
-                nextGame();
                 ++gamecount;
-                if (gameMax != -1 && gamecount > gameMax) endGame();
+                if (engine.player().getMoneyValue() > 0) {
+                    comp.resetLFade();
+                    nextGame();
+                }
+            }
+            // テキスト - GAME OVER
+            if (engine.player().getMoneyValue() <= 0 && gameResultJudge == -3) {
+                comp.fadeInCenterText(g2, "GAME OVER", 400, 300, 255, 0, 0, 2, 0, 0, 0);
+                if (comp.getTFadePhase() == -1) {
+                    comp.resetLFade();
+                    comp.resetTFade();
+                    nextGame();
+                }
             }
         }
     }
     private void resultDraw(Graphics2D g2){
+        // 背景
+        comp.bgDraw(g2);
+        // ランキング
+        g2.setFont(new Font("メイリオ",Font.PLAIN,50));
+        comp.centeringText(g2, "ランキング", 400, 100, Color.WHITE, 2, new Color(0,0,0,60));
+        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+        for (int i=1; i<6; ++i) {
+            comp.shadowedText(g2, ""+i+". "+rankerName[i-1]+" WIN "+rankerWins[i-1]+" : LOSE "+rankerLoses[i-1]+" 総獲得金額 "+rankerMoneys[i-1],200,130 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+            g2.setColor(Color.lightGray);
+            g2.drawLine(120, 140 + (i * 40),680,140 + (i * 40));
+        }
 
     }
     private void nextGame() {
-        gameEngine();
+        gameResultJudge = -2;
+        // がめおべら
+        if (engine.player().getMoneyValue() <= 0) {
+            endGame();
+            return;
+        }
+        if (gameMax != -1 && gamecount > gameMax) {
+            endGame();
+            return;
+        }
+        betEngine();
         removeAll();
-        postGameComponents();
+        scene = "bet";
+        postBetComponents();
         hitBtn.setEnabled(true);
         standBtn.setEnabled(true);
     }
     private void endGame() {
-
+        resultEngine();
+        removeAll();
+        scene = "result";
+        postResultComponents();
     }
 
     /* 画面遷移*/
@@ -381,12 +531,17 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 endlessBtn.setForeground(Color.RED);
                 gotoBetBtn.setEnabled(true);
             }
-            case "gosubBet" -> {
+            case "gotoBet" -> {
+                isInitializingGame = true;
                 betEngine();
+                removeAll();
+                scene = "bet";
                 postBetComponents();
             }
-            case "gotoGame" -> {
-                isInitializingGame = true;
+            case "gosubGame" -> {
+                // ベット適正か判断
+                if(Integer.parseInt(betInput.getText()) > engine.player().getMoneyValue()) return;
+                if(Integer.parseInt(betInput.getText()) <= 0) return;
                 gameEngine();
                 removeAll();
                 scene = "game";
