@@ -6,38 +6,36 @@ import javax.swing.JPanel;
 import java.awt.event.MouseEvent;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class GamePanel extends JPanel implements Runnable, ActionListener {
-    // 画像バッファ
-
-    // ゲームモデル
+    /* ゲームモデル */
     private BjEngine engine;
-    // シーン
+    /* コンポーネント */
+    private JButton game5Btn, game10Btn, endlessBtn, gotoBetBtn, hitBtn, standBtn;
+    private JTextField nameInput, betInput;
+    /* 描画ユーティリティクラス */
+    private final DrawComponents comp = new DrawComponents();
+    /* シーン */
     private String scene = "ttl";
-    // その他汎用
-    /* タイトル画面 */
+    /* 保持の必要な変数 */
+    // タイトル画面
     private boolean ttl_isSelectedBtn = false;
     private String ttl_DESC = "";
-    /* 設定 */
+    // 設定
     private boolean setting_isSelectedBtn = false;
-    private String setting_name = "";
     private String setting_DESC = "";
-    private JButton game5Btn, game10Btn, endlessBtn, gotoBetBtn;
-    private final DrawComponents comp = new DrawComponents();
-    private JTextField nameInput, betInput;
     private boolean isInitializingGame;
+    // ゲーム
     private boolean isMyTurn;
-    private int betValue;
-    private int gameResultJudge = -2;
-    private int burstAnimation = 0;
-    private int gamecount = 1;
-    private int gameMax = 0;
-    private JButton hitBtn, standBtn;
-    private int winCount, loseCount;
-    private String[] rankerName = {"MUR", "AIG", "ATU", "KUT", "TA.", ""};
-    private int[] rankerWins = {6, 5, 4, 3, 2, -1};
-    private int[] rankerLoses = {4, 5, 6, 7, 8, -1};
-    private int[] rankerMoneys = {2000, 1500, 1200, 1000, 700, -1};
+    private int gameCount, gameMax, winCount, loseCount, burstAnimation;
+    private String gameResultJudge;
+    // リザルト
+    private final ArrayList<Ranker> rankerList = new ArrayList<>();
+    private boolean isRankingInitialized = false;
 
     public GamePanel() {
         super();
@@ -46,9 +44,8 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             comp.bufferInclude();
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println("Exception occurred.");
         }
-
         postTtlComponents();
         ttlEngine();
         setVisible(true);
@@ -62,7 +59,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 /* wait */
                 Thread.sleep(16);
             } catch (Exception e) {
-                System.out.println(e);
+                System.out.println("Exception occurred.");
             }
         }
     }
@@ -86,23 +83,44 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     /* 処理メソッド */
 
     // タイトル
-    private void ttlEngine(){ /* none*/ }
+    private void ttlEngine(){
+        if (!isRankingInitialized) {
+            // ファイルが存在するなら読む
+            if (Files.exists(Paths.get("./java.txt"))) importLocalSaveData();
+            else {
+                // ランキング生成
+                final String[] defaultRankerName = {"MUR", "AIG", "ATU", "KUT", "TA.", ""};
+                final int[] defaultRankerWins = {6, 5, 4, 3, 2};
+                final int[] defaultRankerLoses = {4, 5, 6, 7, 8};
+                final int[] defaultRankerMoneys = {1, 1, 1, 1, 1};
+                for (int i = 0; i < 5; ++i) {
+                    final Ranker ranker = new Ranker(i + 1, defaultRankerName[i], defaultRankerWins[i], defaultRankerLoses[i], defaultRankerMoneys[i]);
+                    rankerList.add(ranker);
+                }
+            }
+            isRankingInitialized = true;
+        }
+    }
     // 名前入力
-    private void nameEngine(){ engine = new BjEngine(); }
+    private void nameEngine(){}
     // 賭け金入力
     private void betEngine(){
         // 開始処理
         if (isInitializingGame) {
+            // ゲームエンジンの作成
+            engine = new BjEngine();
             // ディーラーの参加
             engine.joinDealer();
             // プレイヤーの参加
-            setting_name = nameInput.getText();
+            String setting_name = nameInput.getText();
             engine.joinPlayer(setting_name);
             isInitializingGame = false;
             // 変数初期化
             winCount = 0;
             loseCount = 0;
-            gamecount = 1;
+            gameCount = 1;
+            burstAnimation = 0;
+            gameResultJudge = "before";
         }
         // ベット初期化
         engine.bet(0);
@@ -130,24 +148,27 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         if (engine.player().getHandTotal() <= 21) engine.dealerAi();
         gameResultJudge = engine.compare();
         switch (gameResultJudge) {
-            case -1 -> ++loseCount;
-            case 1 -> ++winCount;
+            case "lose" -> ++loseCount;
+            case "win" -> ++winCount;
         }
     }
-    private void resultEngine(){
+    private void resultEngine() {
+        boolean isRanked = false;
+        Ranker rankedPlayer = null;
         // ランクインか
-        for(int i=4; i>0; --i) {
-            if (engine.player().getMoneyValue() > rankerMoneys[i]) {
-                rankerName[i+1] = rankerName[i];
-                rankerWins[i+1] = rankerWins[i];
-                rankerLoses[i+1] = rankerLoses[i];
-                rankerMoneys[i+1] = rankerMoneys[i];
-
-                rankerName[i] = engine.player().getName();
-                rankerWins[i] = winCount;
-                rankerLoses[i] = loseCount;
-                rankerMoneys[i] = engine.player().getMoneyValue();
+        for(Ranker rankers: rankerList) {
+            // ランクインした場合
+            if (!isRanked && engine.player().getMoneyValue() > rankers.getMoney()) {
+                rankedPlayer = new Ranker(rankers.getRank(), engine.player().getName(), winCount, loseCount, engine.player().getMoneyValue());
+                isRanked = true;
             }
+            if (isRanked) { rankers.rankDown(); }
+        }
+        if (rankedPlayer != null) {
+            rankerList.add(rankedPlayer.getRank() - 1, rankedPlayer);
+            rankerList.remove(rankerList.size() - 1);
+            // ファイル保存
+            saveDataToFile();
         }
     }
 
@@ -208,7 +229,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 setOpaque(false);
                 setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
             }
-        };;
+        };
         nameInput.setBounds(200,110,400,40);
         nameInput.setFont(new Font("メイリオ",Font.PLAIN,18));
         add(nameInput);
@@ -266,7 +287,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 setOpaque(false);
                 setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
             }
-        };;
+        };
         betInput.setBounds(100,450,200,40);
         betInput.setFont(new Font("メイリオ",Font.PLAIN,18));
         add(betInput);
@@ -363,7 +384,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         g2.setFont(new Font("メイリオ",Font.PLAIN,20));
         comp.shadowedText(g2, "賭け金：",20,475, Color.BLACK, 2, new Color(255,255,255,60));
         // アニメーション - ゲーム開始フェード
-        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gamecount : "GAME "+gamecount+" / "+gameMax);
+        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
     }
     private void gameDraw(Graphics2D g2){
         boolean writtenHands = true;
@@ -372,7 +393,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // スプライト - 山札
         for(int i=0; i<engine.getDeckNumber(); ++i) comp.deckDraw(g2, 360, 220 - i/2);
         // アニメーション - ゲーム開始フェード
-        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gamecount : "GAME "+gamecount+" / "+gameMax);
+        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
         if (comp.getLFadePhase() != -1) return;
         // スプライト - 手札
         for(int i=0; i<engine.getPlayerHandAmount(); ++i) {
@@ -423,21 +444,21 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         } else {
             // テキスト - 勝敗
             switch(gameResultJudge) {
-                case -1 -> comp.fadeInCenterText(g2, "LOSE", 400, 300, 0, 0, 255, 2, 255, 255, 255);
-                case 0 -> comp.fadeInCenterText(g2, "DRAW", 400, 300, 255, 255, 0, 2, 255, 255, 255);
-                case 1 -> comp.fadeInCenterText(g2, "WIN", 400, 300, 255, 0, 0, 2, 255, 255, 255);
+                case "lose" -> comp.fadeInCenterText(g2, "LOSE", 400, 300, 0, 0, 255, 2, 255, 255, 255);
+                case "draw" -> comp.fadeInCenterText(g2, "DRAW", 400, 300, 255, 255, 0, 2, 255, 255, 255);
+                case "win" -> comp.fadeInCenterText(g2, "WIN", 400, 300, 255, 0, 0, 2, 255, 255, 255);
             }
             if (comp.getTFadePhase() == -1) {
-                gameResultJudge = -3;
+                gameResultJudge = "end";
                 comp.resetTFade();
-                ++gamecount;
+                ++gameCount;
                 if (engine.player().getMoneyValue() > 0) {
                     comp.resetLFade();
                     nextGame();
                 }
             }
             // テキスト - GAME OVER
-            if (engine.player().getMoneyValue() <= 0 && gameResultJudge == -3) {
+            if (engine.player().getMoneyValue() <= 0 && gameResultJudge.equals("end")) {
                 comp.fadeInCenterText(g2, "GAME OVER", 400, 300, 255, 0, 0, 2, 0, 0, 0);
                 if (comp.getTFadePhase() == -1) {
                     comp.resetLFade();
@@ -454,21 +475,25 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         g2.setFont(new Font("メイリオ",Font.PLAIN,50));
         comp.centeringText(g2, "ランキング", 400, 100, Color.WHITE, 2, new Color(0,0,0,60));
         g2.setFont(new Font("メイリオ",Font.PLAIN,20));
-        for (int i=1; i<6; ++i) {
-            comp.shadowedText(g2, ""+i+". "+rankerName[i-1]+" WIN "+rankerWins[i-1]+" : LOSE "+rankerLoses[i-1]+" 総獲得金額 "+rankerMoneys[i-1],200,130 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+        for (int i=0; i<5; ++i) {
+            comp.shadowedText(g2, ""+rankerList.get(i).getRank()
+                    +". "+rankerList.get(i).getName()
+                    +" WIN "+rankerList.get(i).getWin()
+                    +" : LOSE "+rankerList.get(i).getLose()
+                    +" 総獲得金額 "+rankerList.get(i).getMoney(),200,170 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
             g2.setColor(Color.lightGray);
-            g2.drawLine(120, 140 + (i * 40),680,140 + (i * 40));
+            g2.drawLine(120, 180 + (i * 40),680,180 + (i * 40));
         }
 
     }
     private void nextGame() {
-        gameResultJudge = -2;
+        gameResultJudge = "before";
         // がめおべら
         if (engine.player().getMoneyValue() <= 0) {
             endGame();
             return;
         }
-        if (gameMax != -1 && gamecount > gameMax) {
+        if (gameMax != -1 && gameCount > gameMax) {
             endGame();
             return;
         }
@@ -547,18 +572,62 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 scene = "game";
                 postGameComponents();
             }
-            case "gosubHit" -> {
-                hitEngine();
-            }
-            case "gosubStand" -> {
-                standEngine();
-            }
+            case "gosubHit" -> hitEngine();
+            case "gosubStand" -> standEngine();
             case "gotoResult" -> {
                 resultEngine();
                 removeAll();
                 postResultComponents();
             }
             case "gotoExit" -> System.exit(0);
+        }
+    }
+
+    private void saveDataToFile(){
+        try {
+            // FileWriterクラスのオブジェクトを生成する
+            FileWriter file = new FileWriter("./java.txt");
+            // PrintWriterクラスのオブジェクトを生成する
+            PrintWriter pw = new PrintWriter(new BufferedWriter(file));
+
+            //ファイルに書き込む
+            for(Ranker rankers: rankerList) {
+                pw.println(rankers.getRank());
+                pw.println(rankers.getName());
+                pw.println(rankers.getWin());
+                pw.println(rankers.getLose());
+                pw.println(rankers.getMoney());
+            }
+
+            //ファイルを閉じる
+            pw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void importLocalSaveData() {
+        try {
+            FileReader fr = new FileReader("./java.txt");
+            BufferedReader br = new BufferedReader(fr);
+            for(int ri=0; ri<5; ++ri) {
+                String[] rankerDat = new String[5];
+                rankerDat[0] = br.readLine();
+                if (rankerDat[0] != null) {
+                    for (int i=1; i<5; ++i) rankerDat[i] = br.readLine();
+                    rankerList.add(new Ranker(
+                            Integer.parseInt(rankerDat[0]),
+                            rankerDat[1],
+                            Integer.parseInt(rankerDat[2]),
+                            Integer.parseInt(rankerDat[3]),
+                            Integer.parseInt(rankerDat[4])
+                    ));
+                }
+            }
+
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

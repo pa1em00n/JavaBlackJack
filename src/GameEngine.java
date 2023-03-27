@@ -17,7 +17,7 @@ public class GameEngine {
 
     public Object getEngine() {
         return switch (mode) {
-            // case MODE_TITLE -> titleEngine;
+            case MODE_TITLE -> titleEngine;
             case MODE_BJ -> bjEngine;
             default -> false;
         };

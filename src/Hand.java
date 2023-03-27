@@ -10,15 +10,12 @@ public class Hand {
 
     /* カード情報関連 */
     public void addCard(Card newCard) { cardList.add(newCard); }
-    public void removeCard(int order, Deck deck) { cardList.remove(order); }
+    public void removeCard(int order) { cardList.remove(order); }
     public void flipCard(int order, boolean which) { cardList.get(order).setFace(which); }
     // setter
-        ;
+
     // getter
     public Card getCard(int order) { return cardList.get(order); }
-    public int getCardNo(int order) { return cardList.get(order).getNumber(); }
-    public String getCardSuit(int order) { return cardList.get(order).getSuit(); }
-    public boolean getCardFace(int order) { return cardList.get(order).isFace(); }
     public int getCardAmount() { return cardList.size(); }
 
     /* 点数計算関連 */

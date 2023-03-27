@@ -3,12 +3,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Array;
 
 public class DrawComponents {
     private BufferedImage BG;
-    private BufferedImage[] card = new BufferedImage[54];
-    private String[] cardSrcList = {
+    private final String[] cardSrcList = {
             "./img/card/card_back.png",
             "./img/card/card_spade_01.png",
             "./img/card/card_spade_02.png",
@@ -64,17 +62,16 @@ public class DrawComponents {
             "./img/card/card_club_13.png",
             "./img/card/card_joker.png"
     };
-    private BufferedImage[] chip = new BufferedImage[2];
-    private String[] chipSrcList = {
+    private final BufferedImage[] card = new BufferedImage[cardSrcList.length];
+    private final String[] chipSrcList = {
             "./img/chip/chip_vertical.png",
             "./img/chip/chip_perspective.png"
     };
-    private int fadePhaseII = 0;
+    private final BufferedImage[] chip = new BufferedImage[chipSrcList.length];
     private final int CARD_BACK = 0;
     private int deckTopY = 0;
-    private int[] cardPhase = {0,0,0,0,0,0,0,0,0,0};
-    private TextCenterLineBack textCenterLineBack;
-    private FadeInCenterText fadeInCenterText;
+    private final TextCenterLineBack textCenterLineBack;
+    private final FadeInCenterText fadeInCenterText;
 
     public DrawComponents() {
         textCenterLineBack = new TextCenterLineBack();
@@ -167,18 +164,26 @@ public class DrawComponents {
                 myCard.setAnimationPhase(1);
             }
             case 1 -> {
+                // 合計移動距離を算出
                 final int xMoveLength = (Math.abs(350 - (100+(order*90))) == 0) ? 1 : Math.abs(350 - (100+(order*90)));
                 final int yMoveLength = 160;
+                // 移動速度
+                final float v = 15;
+                // x, yの速度を算出
+                final double d = Math.sqrt( (Math.pow(xMoveLength, 2) + Math.pow(yMoveLength, 2)) );
+                final double flame = (d/v);
+                final int vx = (int)((double)xMoveLength/flame);
+                final int vy = (int)((double)yMoveLength/flame);
                 if (350 - (100+(order*90)) >= 0) {
-                    if (myCard.getPosX() > 100+(order*90)) myCard.modPosX(-15);
-                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() > 100+(order*90)) myCard.modPosX(-vx);
+                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY(vy);
                     if (myCard.getPosX() < 100+(order*90)) myCard.setPosX(100+(order*90));
                     if (myCard.getPosY() > deckTopY+160) myCard.setPosY(deckTopY+160);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
                     if ((myCard.getPosX() <= 100+(order*90)) && (myCard.getPosY() >= deckTopY+160)) myCard.setAnimationPhase(2);
                 } else {
-                    if (myCard.getPosX() < 100+(order*90)) myCard.modPosX(15);
-                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY((int)Math.floor(15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() < 100+(order*90)) myCard.modPosX(vx);
+                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY(vy);
                     if (myCard.getPosX() > 100+(order*90)) myCard.setPosX(100+(order*90));
                     if (myCard.getPosY() > deckTopY+160) myCard.setPosY(deckTopY+160);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
@@ -209,16 +214,23 @@ public class DrawComponents {
             case 1 -> {
                 final int xMoveLength = (Math.abs(350 - (620 - (order*90))) == 0) ? 1 : Math.abs(350 - (620 - (order*90)));
                 final int yMoveLength = 200;
+                // 移動速度
+                final float v = 15;
+                // x, yの速度を算出
+                final double d = Math.sqrt( (Math.pow(xMoveLength, 2) + Math.pow(yMoveLength, 2)) );
+                final double flame = (d/v);
+                final int vx = (int)((double)xMoveLength/flame);
+                final int vy = (int)((double)yMoveLength/flame);
                 if (350 - (620 - (order*90)) >= 0) {
-                    if (myCard.getPosX() > 620 - (order*90)) myCard.modPosX(-15);
-                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() > 620 - (order*90)) myCard.modPosX(-vx);
+                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY(-vy);
                     if (myCard.getPosX() < 620 - (order*90)) myCard.setPosX(620 - (order*90));
                     if (myCard.getPosY() < deckTopY-200) myCard.setPosY(deckTopY-200);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
                     if ((myCard.getPosX() <= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-200)) myCard.setAnimationPhase(2);
                 } else {
-                    if (myCard.getPosX() < 620 - (order*90)) myCard.modPosX(15);
-                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY((int)Math.floor(-15.0 * ((float)yMoveLength / (float)xMoveLength)));
+                    if (myCard.getPosX() < 620 - (order*90)) myCard.modPosX(vx);
+                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY(-vy);
                     if (myCard.getPosX() > 620 - (order*90)) myCard.setPosX(620 - (order*90));
                     if (myCard.getPosY() < deckTopY-200) myCard.setPosY(deckTopY-200);
                     g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);

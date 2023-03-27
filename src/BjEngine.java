@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 public class BjEngine {
     final private Deck deck;
-    final private ArrayList<Player> playerList = new ArrayList<Player>();
+    final private ArrayList<Player> playerList = new ArrayList<>();
 
     /* デッキの作成 */
     public BjEngine() {
@@ -56,7 +56,7 @@ public class BjEngine {
     }
 
     /* スタンド */
-    public void stand(int id) { ; }
+    // public void stand(int id) { ; }
 
     /* ディーラー処理 */
     public void dealerAi() {
@@ -69,28 +69,28 @@ public class BjEngine {
     }
 
     /* 比較 */
-    public int compare() {
+    public String compare() {
         // ディーラー公開
         dealer().flip(1, true);
         // プレイヤーバースト
-        if (player().isBurst())  return -1;
+        if (player().isBurst())  return "lose";
         // ディーラーバースト
         if (dealer().isBurst()) {
             pay(0);
-            return 1;
+            return "win";
         }
         // 数値の比較
 
         // プレイヤー勝利
         if (player().getHandTotal() > dealer().getHandTotal()) {
             pay(0);
-            return 1;
+            return "win";
         }
         // ディーラー勝利
-        if (player().getHandTotal() < dealer().getHandTotal()) return -1;
+        if (player().getHandTotal() < dealer().getHandTotal()) return "lose";
         // ひきわけ
         pay(1);
-        return 0;
+        return "draw";
     }
 
     /* 払い戻し */
@@ -122,12 +122,5 @@ public class BjEngine {
     public int getPlayerHandCalc() { return player().getHandTotal(); }
     public int getDealerHandCalc() { return dealer().getHandTotal(); }
     public Card getPlayerCard(int order) { return player().getCard(order); }
-    public int getPlayerCardNo(int order) { return player().getCardNo(order); }
-    public String getPlayerCardSuit(int order) { return player().getCardSuit(order);}
-    public boolean getPlayerCardFace(int order) { return player().getCardFace(order);}
-
     public Card getDealerCard(int order) { return dealer().getCard(order); }
-    public int getDealerCardNo(int order) { return dealer().getCardNo(order); }
-    public String getDealerCardSuit(int order) { return dealer().getCardSuit(order);}
-    public boolean getDealerCardFace(int order) { return dealer().getCardFace(order);}
 }

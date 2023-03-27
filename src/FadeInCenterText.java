@@ -32,15 +32,6 @@ public class FadeInCenterText {
                     fadePhase = -1;
                 }
             }
-            /*
-            case -1 -> {
-                // reset
-                textAlpha = 0;
-                fadePhase = 0;
-                wait = 0;
-                lineBgPosition = 800;
-            }
-             */
         }
     }
     public void reSet() {

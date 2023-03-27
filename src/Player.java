@@ -4,7 +4,7 @@ public class Player {
     private final int id;
     private String name;
     final private Hand hand;
-    private Money money;
+    private final Money money;
     private int bet;
     private final boolean isComputer;
     private final boolean isDealer;
@@ -44,16 +44,12 @@ public class Player {
     public void draw(Deck deck) { hand.addCard(deck.pick()); }
     public void discard(int order, Deck deck) {
         deck.back(hand.getCard(order));
-        hand.removeCard(order, deck);
+        hand.removeCard(order);
     }
     public void flip(int order, boolean which) { hand.flipCard(order, which); }
     // setter
-        ;
     // getter
     public Card getCard(int order) { return hand.getCard(order); }
-    public int getCardNo(int order) { return hand.getCardNo(order); }
-    public String getCardSuit(int order) { return hand.getCardSuit(order); }
-    public boolean getCardFace(int order) { return hand.getCardFace(order); }
     public int getCardAmount() { return hand.getCardAmount(); }
     public int getHandTotal() { return hand.calc(); }
     public boolean isBurst() { return (hand.calc() > 21); }
@@ -62,7 +58,6 @@ public class Player {
     public void addMoney(int value) { money.addition(value); }
     public void subtractionMoney(int value) { money.subtraction(value); }
     // setter
-    public void setMoney(int value) { money = new Money(value); }
     // getter
     public int getMoneyValue() { return money.getValue(); }
 
