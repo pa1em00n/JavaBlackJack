@@ -475,12 +475,17 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         g2.setFont(new Font("メイリオ",Font.PLAIN,50));
         comp.centeringText(g2, "ランキング", 400, 100, Color.WHITE, 2, new Color(0,0,0,60));
         g2.setFont(new Font("メイリオ",Font.PLAIN,20));
-        for (int i=0; i<5; ++i) {
-            comp.shadowedText(g2, ""+rankerList.get(i).getRank()
-                    +". "+rankerList.get(i).getName()
-                    +" WIN "+rankerList.get(i).getWin()
-                    +" : LOSE "+rankerList.get(i).getLose()
-                    +" 総獲得金額 "+rankerList.get(i).getMoney(),200,170 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+        comp.shadowedText(g2, "RANK", 150, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
+        comp.shadowedText(g2, "NAME", 150 + 80, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
+        comp.shadowedText(g2, "WIN", 150 + 280, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
+        comp.shadowedText(g2, "LOSE", 150 + 340, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
+        comp.shadowedText(g2, "総獲得金額", 150 + 420, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
+        for(int i=0; i<5; ++i) {
+            comp.shadowedText(g2, String.valueOf(rankerList.get(i).getRank()),150 + 20,210 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+            comp.shadowedText(g2, (rankerList.get(i).getName().length() > 6) ? rankerList.get(i).getName().substring(0, 7)+"..." : rankerList.get(i).getName(),150 + 80,210 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+            comp.shadowedText(g2, String.valueOf(rankerList.get(i).getWin()),150 + 280 + 20,210 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+            comp.shadowedText(g2, String.valueOf(rankerList.get(i).getLose()),150 + 340 + 20,210 + (i * 40), Color.WHITE, 2, new Color(255,255,255,60));
+            comp.centeringText(g2, String.valueOf(rankerList.get(i).getMoney()),150 + 420 + 50,210 + (i * 40) - 10, Color.WHITE, 2, new Color(255,255,255,60));
             g2.setColor(Color.lightGray);
             g2.drawLine(120, 180 + (i * 40),680,180 + (i * 40));
         }
