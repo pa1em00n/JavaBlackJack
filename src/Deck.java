@@ -30,7 +30,7 @@ public class Deck {
     }
     public void back(Card discarded) {
         cardList.add(discarded);
-        discarded.setAnimationPhase(0);
+        discarded.setAnimationPhase("in deck");
     }
     public void shuffle() {
         Collections.shuffle(cardList);

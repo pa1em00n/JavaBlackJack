@@ -69,6 +69,7 @@ public class DrawComponents {
     };
     private final BufferedImage[] chip = new BufferedImage[chipSrcList.length];
     private final int CARD_BACK = 0;
+    private int deckTopX = 0;
     private int deckTopY = 0;
     private final TextCenterLineBack textCenterLineBack;
     private final FadeInCenterText fadeInCenterText;
@@ -89,7 +90,8 @@ public class DrawComponents {
         }
     }
 
-    /* 汎用描画系 */
+    /* 汎用描画 */
+
     // 背景
     public void bgDraw(Graphics2D g2) { g2.drawImage(BG, 0, 0, null); }
     // 影つけ
@@ -110,6 +112,7 @@ public class DrawComponents {
 
         g2.drawString(text, x, y);
     }
+    // センタリング・影付き
     public void centeringText(Graphics2D g2, String text, int x, int y, Color color, int shadowPosition, Color shadowColor){
         FontMetrics fm = g2.getFontMetrics();
         Rectangle rectText = fm.getStringBounds(text, g2).getBounds();
@@ -122,6 +125,7 @@ public class DrawComponents {
         g2.setColor(color);
         g2.drawString(text, x, y);
     }
+    // センタリング・縁付き
     public void centeringTextWithEdge(Graphics2D g2, String text, int x, int y, Color color, int edgeDepth, Color shadowColor){
         FontMetrics fm = g2.getFontMetrics();
         Rectangle rectText = fm.getStringBounds(text, g2).getBounds();
@@ -139,115 +143,102 @@ public class DrawComponents {
         g2.setColor(color);
         g2.drawString(text, x, y);
     }
-    // 中央に帯付きテキスト表示
+    // センタリング1行・帯付き
     public void textCenterLineBack (Graphics2D g2, String line) {
         textCenterLineBack.call(g2);
         centeringText(g2, line, 400, 275, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
     }
+    // センタリング2行・帯付き
     public void textCenterLineBack (Graphics2D g2, String line1, String line2) {
         textCenterLineBack.call(g2);
         centeringText(g2,line1, 400, 245, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
         centeringText(g2,line2, 400, 305, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
     }
-    // デッキ
-    public void deckDraw(Graphics2D g2 ,int x, int y) {
-        g2.drawImage(card[CARD_BACK], x, y, 80,120,null);
+    // デッキ描画
+    public void deckDraw(Graphics2D g2 ,int x, int y, int amount) {
+        for (int i=0; i<amount; ++i) g2.drawImage(card[CARD_BACK], x, y - (i/2), 80,120,null);
+        deckTopX = x;
         if (y > deckTopY) deckTopY = y;
     }
     // 手札
     public void myHandDraw(Graphics2D g2, int order, Card myCard) {
-        final int suitToNo;
         switch (myCard.getAnimationPhase()) {
-            case 0 -> {
-                myCard.setPosX(350);
+            case "in deck" -> {
+                myCard.setPosX(deckTopX);
                 myCard.setPosY(deckTopY);
-                myCard.setAnimationPhase(1);
+                myCard.setAnimationPhase("moving to hand");
             }
-            case 1 -> {
+            case "moving to hand" -> {
+                final int destinationX = 100+(order*90);
+                final int destinationY = deckTopY+160;
                 // 合計移動距離を算出
-                final int xMoveLength = (Math.abs(350 - (100+(order*90))) == 0) ? 1 : Math.abs(350 - (100+(order*90)));
-                final int yMoveLength = 160;
+                final int xMoveLength = (Math.abs(deckTopX - destinationX) == 0) ? 1 : Math.abs(deckTopX - destinationX);
+                final int yMoveLength = Math.abs(deckTopY - destinationY);
                 // 移動速度
                 final float v = 15;
                 // x, yの速度を算出
                 final double d = Math.sqrt( (Math.pow(xMoveLength, 2) + Math.pow(yMoveLength, 2)) );
                 final double flame = (d/v);
-                final int vx = (int)((double)xMoveLength/flame);
-                final int vy = (int)((double)yMoveLength/flame);
-                if (350 - (100+(order*90)) >= 0) {
-                    if (myCard.getPosX() > 100+(order*90)) myCard.modPosX(-vx);
-                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY(vy);
-                    if (myCard.getPosX() < 100+(order*90)) myCard.setPosX(100+(order*90));
-                    if (myCard.getPosY() > deckTopY+160) myCard.setPosY(deckTopY+160);
-                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() <= 100+(order*90)) && (myCard.getPosY() >= deckTopY+160)) myCard.setAnimationPhase(2);
-                } else {
-                    if (myCard.getPosX() < 100+(order*90)) myCard.modPosX(vx);
-                    if (myCard.getPosY() < deckTopY+160) myCard.modPosY(vy);
-                    if (myCard.getPosX() > 100+(order*90)) myCard.setPosX(100+(order*90));
-                    if (myCard.getPosY() > deckTopY+160) myCard.setPosY(deckTopY+160);
-                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() >= 100+(order*90)) && (myCard.getPosY() >= deckTopY+160)) myCard.setAnimationPhase(2);
-                }
+                final int vx = (int)Math.ceil((double)xMoveLength/flame);
+                final int vy = (int)Math.ceil((double)yMoveLength/flame);
+                // 移動
+                if (Math.abs(deckTopX - destinationX) > Math.abs(deckTopX - myCard.getPosX())) myCard.modPosX((deckTopX - destinationX >= 0) ? -vx : vx);
+                if (Math.abs(deckTopX - myCard.getPosX()) >= Math.abs(deckTopX - destinationX)) myCard.setPosX(destinationX);
+                if (myCard.getPosY() < destinationY) myCard.modPosY(vy);
+                if (myCard.getPosY() >= destinationY) myCard.setPosY(destinationY);
+                g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
+                if (myCard.getPosX() == destinationX && myCard.getPosY() == destinationY) myCard.setAnimationPhase("on hand");
             }
-            case 2 -> {
+            case "on hand" -> g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*
                 switch (myCard.getSuit()) {
-                    case "Spade" -> suitToNo = 0;
-                    case "Heart" -> suitToNo = 1;
-                    case "Diamond" -> suitToNo = 2;
-                    case "Club" -> suitToNo = 3;
-                    default -> suitToNo = -1;
+                    case "Spade" -> 0;
+                    case "Heart" -> 1;
+                    case "Diamond" -> 2;
+                    case "Club" -> 3;
+                    default -> 4;
                 }
-                if (suitToNo == -1) return;
-                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 100 + (order*90), deckTopY+160, 80,120,null);
-            }
+            ) : CARD_BACK], 100 + (order*90), deckTopY+160, 80,120,null);
         }
     }
     public void opponentHandDraw(Graphics2D g2, int order, Card myCard) {
-        final int suitToNo;
         switch (myCard.getAnimationPhase()) {
-            case 0 -> {
-                myCard.setPosX(350);
+            case "in deck" -> {
+                myCard.setPosX(deckTopX);
                 myCard.setPosY(deckTopY);
-                myCard.setAnimationPhase(1);
+                myCard.setAnimationPhase("moving to hand");
             }
-            case 1 -> {
-                final int xMoveLength = (Math.abs(350 - (620 - (order*90))) == 0) ? 1 : Math.abs(350 - (620 - (order*90)));
-                final int yMoveLength = 200;
+            case "moving to hand" -> {
+                final int destinationX = 620-(order*90);
+                final int destinationY = deckTopY-200;
+                // 合計移動距離を算出
+                final int xMoveLength = (Math.abs(deckTopX - destinationX) == 0) ? 1 : Math.abs(deckTopX - destinationX);
+                final int yMoveLength = Math.abs(deckTopY - destinationY);
                 // 移動速度
                 final float v = 15;
                 // x, yの速度を算出
                 final double d = Math.sqrt( (Math.pow(xMoveLength, 2) + Math.pow(yMoveLength, 2)) );
                 final double flame = (d/v);
-                final int vx = (int)((double)xMoveLength/flame);
-                final int vy = (int)((double)yMoveLength/flame);
-                if (350 - (620 - (order*90)) >= 0) {
-                    if (myCard.getPosX() > 620 - (order*90)) myCard.modPosX(-vx);
-                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY(-vy);
-                    if (myCard.getPosX() < 620 - (order*90)) myCard.setPosX(620 - (order*90));
-                    if (myCard.getPosY() < deckTopY-200) myCard.setPosY(deckTopY-200);
-                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() <= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-200)) myCard.setAnimationPhase(2);
-                } else {
-                    if (myCard.getPosX() < 620 - (order*90)) myCard.modPosX(vx);
-                    if (myCard.getPosY() > deckTopY-200) myCard.modPosY(-vy);
-                    if (myCard.getPosX() > 620 - (order*90)) myCard.setPosX(620 - (order*90));
-                    if (myCard.getPosY() < deckTopY-200) myCard.setPosY(deckTopY-200);
-                    g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
-                    if ((myCard.getPosX() >= 620 - (order*90)) && (myCard.getPosY() <= deckTopY-200)) myCard.setAnimationPhase(2);
-                }
+                final int vx = (int)Math.ceil((double)xMoveLength/flame);
+                final int vy = (int)Math.ceil((double)yMoveLength/flame);
+                // 移動
+                if (Math.abs(deckTopX - destinationX) > Math.abs(deckTopX - myCard.getPosX())) myCard.modPosX((deckTopX - destinationX >= 0) ? -vx : vx);
+                if (Math.abs(deckTopX - myCard.getPosX()) >= Math.abs(deckTopX - destinationX)) myCard.setPosX(destinationX);
+                if (myCard.getPosY() > destinationY) myCard.modPosY(-vy);
+                if (destinationY >= myCard.getPosY()) myCard.setPosY(destinationY);
+                // 描画
+                g2.drawImage(card[CARD_BACK], myCard.getPosX(), myCard.getPosY(), 80,120,null);
+                // 手札なら
+                if (myCard.getPosX() == destinationX && myCard.getPosY() == destinationY) myCard.setAnimationPhase("on hand");
             }
-            case 2 -> {
+            case "on hand" -> g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*
                 switch (myCard.getSuit()) {
-                    case "Spade" -> suitToNo = 0;
-                    case "Heart" -> suitToNo = 1;
-                    case "Diamond" -> suitToNo = 2;
-                    case "Club" -> suitToNo = 3;
-                    default -> suitToNo = -1;
+                    case "Spade" -> 0;
+                    case "Heart" -> 1;
+                    case "Diamond" -> 2;
+                    case "Club" -> 3;
+                    default -> 4;
                 }
-                if (suitToNo == -1) return;
-                g2.drawImage(card[(myCard.isFace()) ? myCard.getNumber() + (13*suitToNo) : CARD_BACK], 620 - (order*90), deckTopY-200, 80,120,null);
-            }
+            ) : CARD_BACK], 620 - (order*90), deckTopY-200, 80,120,null);
         }
     }
     // ポイント台
@@ -260,9 +251,9 @@ public class DrawComponents {
          */
     }
     // 勝敗
-    public void fadeInCenterText(Graphics2D g2, String text, int x, int y, int r, int g, int b, int edgeDepth,int sr, int sg, int sb){
+    public void fadeInCenterText(Graphics2D g2, String text, int x, int y, Color color, int edgeDepth, Color shadow){
         fadeInCenterText.call(g2);
-        centeringTextWithEdge(g2, text, x,y, new Color(r,g,b,fadeInCenterText.getTextAlpha()), edgeDepth, new Color(sr,sg,sb,fadeInCenterText.getTextAlpha()));
+        centeringTextWithEdge(g2, text, x,y, new Color(color.getRed(), color.getGreen(), color.getBlue(),fadeInCenterText.getTextAlpha()), edgeDepth, new Color(shadow.getRed(), shadow.getGreen(), shadow.getBlue(),fadeInCenterText.getTextAlpha()));
     }
     public int getLFadePhase() { return textCenterLineBack.getFadePhase(); }
     public void resetLFade() {textCenterLineBack.reSet();}

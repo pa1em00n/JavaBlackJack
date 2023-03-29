@@ -73,24 +73,24 @@ public class BjEngine {
         // ディーラー公開
         dealer().flip(1, true);
         // プレイヤーバースト
-        if (player().isBurst())  return "lose";
+        if (player().isBurst())  return "LOSE";
         // ディーラーバースト
         if (dealer().isBurst()) {
             pay(0);
-            return "win";
+            return "WIN";
         }
         // 数値の比較
 
         // プレイヤー勝利
         if (player().getHandTotal() > dealer().getHandTotal()) {
             pay(0);
-            return "win";
+            return "WIN";
         }
         // ディーラー勝利
-        if (player().getHandTotal() < dealer().getHandTotal()) return "lose";
+        if (player().getHandTotal() < dealer().getHandTotal()) return "LOSE";
         // ひきわけ
         pay(1);
-        return "draw";
+        return "DRAW";
     }
 
     /* 払い戻し */
@@ -116,7 +116,7 @@ public class BjEngine {
         return obj;
     }
     // getter
-    public int getDeckNumber() { return deck.getAmount(); }
+    public Deck getDeck() { return deck; }
     public int getPlayerHandAmount() { return player().getCardAmount(); }
     public int getDealerHandAmount() { return dealer().getCardAmount(); }
     public int getPlayerHandCalc() { return player().getHandTotal(); }

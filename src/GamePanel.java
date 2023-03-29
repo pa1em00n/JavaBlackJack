@@ -366,7 +366,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // 背景
         comp.bgDraw(g2);
         // スプライト - 山札
-        for(int i=0; i<engine.getDeckNumber(); ++i) comp.deckDraw(g2, 360, 220 - i/2);
+        comp.deckDraw(g2, 360, 220, engine.getDeck().getAmount());
         // 矩形 - 資金
         g2.setColor(Color.BLACK);
         g2.drawRect(20,160, 200, 80);
@@ -391,15 +391,15 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // 背景
         comp.bgDraw(g2);
         // スプライト - 山札
-        for(int i=0; i<engine.getDeckNumber(); ++i) comp.deckDraw(g2, 360, 220 - i/2);
+        comp.deckDraw(g2, 360, 220, engine.getDeck().getAmount());
         // アニメーション - ゲーム開始フェード
         comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
         if (comp.getLFadePhase() != -1) return;
         // スプライト - 手札
         for(int i=0; i<engine.getPlayerHandAmount(); ++i) {
             if (i != 0) {
-                if (engine.getPlayerCard(i - 1).getAnimationPhase() == 2) comp.myHandDraw(g2, i, engine.getPlayerCard(i));
-                if (i == engine.getPlayerHandAmount()-1 && engine.getPlayerCard(i).getAnimationPhase() != 2) {
+                if (engine.getPlayerCard(i - 1).getAnimationPhase().equals("on hand")) comp.myHandDraw(g2, i, engine.getPlayerCard(i));
+                if (i == engine.getPlayerHandAmount()-1 && !engine.getPlayerCard(i).getAnimationPhase().equals("on hand")) {
                     // 手札最後まで描画完了か取得
                     writtenHands = false;
                 }
@@ -407,8 +407,8 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         }
         for(int i=0; i<engine.getDealerHandAmount(); ++i) {
             if (i != 0) {
-                if (engine.getDealerCard(i-1).getAnimationPhase() == 2) comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
-                if (i == engine.getDealerHandAmount()-1 && engine.getDealerCard(i).getAnimationPhase() != 2) {
+                if (engine.getDealerCard(i-1).getAnimationPhase().equals("on hand")) comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
+                if (i == engine.getDealerHandAmount()-1 && !engine.getDealerCard(i).getAnimationPhase().equals("on hand")) {
                     // 手札最後まで描画完了か取得
                     writtenHands = false;
                 }
@@ -436,17 +436,20 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // テキスト - バースト
         if (!writtenHands) return;
         if (burstAnimation == 1) {
-            comp.fadeInCenterText(g2, "BURST", 400, 300, 255, 0, 0, 2, 255, 255, 255);
+            comp.fadeInCenterText(g2, "BURST", 400, 300, Color.RED, 2, Color.WHITE);
             if (comp.getTFadePhase() == -1) {
                 burstAnimation = 0;
                 comp.resetTFade();
             }
         } else {
             // テキスト - 勝敗
-            switch(gameResultJudge) {
-                case "lose" -> comp.fadeInCenterText(g2, "LOSE", 400, 300, 0, 0, 255, 2, 255, 255, 255);
-                case "draw" -> comp.fadeInCenterText(g2, "DRAW", 400, 300, 255, 255, 0, 2, 255, 255, 255);
-                case "win" -> comp.fadeInCenterText(g2, "WIN", 400, 300, 255, 0, 0, 2, 255, 255, 255);
+            if (gameResultJudge.equals("LOSE") || gameResultJudge.equals("DRAW")|| gameResultJudge.equals("WIN")) {
+                comp.fadeInCenterText(g2, gameResultJudge, 400, 300, switch (gameResultJudge) {
+                    case "LOSE" -> Color.BLUE;
+                    case "DRAW" -> Color.ORANGE;
+                    case "WIN" -> Color.RED;
+                    default -> Color.BLACK;
+                }, 2, Color.WHITE);
             }
             if (comp.getTFadePhase() == -1) {
                 gameResultJudge = "end";
@@ -459,7 +462,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             }
             // テキスト - GAME OVER
             if (engine.player().getMoneyValue() <= 0 && gameResultJudge.equals("end")) {
-                comp.fadeInCenterText(g2, "GAME OVER", 400, 300, 255, 0, 0, 2, 0, 0, 0);
+                comp.fadeInCenterText(g2, "GAME OVER", 400, 300, Color.RED, 2, Color.BLACK);
                 if (comp.getTFadePhase() == -1) {
                     comp.resetLFade();
                     comp.resetTFade();
@@ -489,7 +492,6 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             g2.setColor(Color.lightGray);
             g2.drawLine(120, 180 + (i * 40),680,180 + (i * 40));
         }
-
     }
     private void nextGame() {
         gameResultJudge = "before";

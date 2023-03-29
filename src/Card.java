@@ -6,7 +6,7 @@ public class Card {
     private boolean isFace;
     private int posX;
     private int posY;
-    private int animationPhase = 0;
+    private String animationPhase;
 
     /* コンストラクタ */
     public Card(int number, int suit) {
@@ -15,6 +15,7 @@ public class Card {
         this.number = number;
         this.suit = suitList[suit];
         this.isFace = false;
+        this.animationPhase = "in deck";
     }
 
     // setter
@@ -31,6 +32,6 @@ public class Card {
     public void modPosX(int val) { posX +=val; }
     public void setPosY(int val) { posY = val; }
     public void modPosY(int val) { posY +=val; }
-    public int getAnimationPhase() { return animationPhase; }
-    public void setAnimationPhase(int phase) { animationPhase = phase; }
+    public String getAnimationPhase() { return animationPhase; }
+    public void setAnimationPhase(String phase) { animationPhase = phase; }
 }
