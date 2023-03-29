@@ -12,20 +12,22 @@ public class BjEngine {
 
     /* ディーラーの追加 */
     public void joinDealer() {
+        if (getDealer() != null) return;
         Player newPlayer = new Player(playerList.size());
         playerList.add(newPlayer);
     }
 
     /* プレイヤーの追加 */
     public void joinPlayer(String name) {
+        if (getPlayer() != null) return;
         Player newPlayer = new Player(playerList.size(), name, 500);
         playerList.add(newPlayer);
     }
 
     /* 賭け金設定 */
     public void bet(int value) {
-        player().setBet(value);
-        player().subtractionMoney(value);
+        getPlayer().setBet(value);
+        getPlayer().subtractionMoney(value);
     }
 
     /* 1ゲームの開始処理 */
@@ -62,65 +64,58 @@ public class BjEngine {
     public void dealerAi() {
         // 手札が17未満なら引く
         while (true) {
-            if (dealer().getHandTotal() >= 17) break;
-            if (dealer().isBurst()) break;
-            hit(dealer());
+            if (getDealer().getHandTotal() >= 17) break;
+            if (getDealer().isBurst()) break;
+            hit(getDealer());
         }
     }
 
     /* 比較 */
     public String compare() {
-        // ディーラー公開
-        dealer().flip(1, true);
+        // ディーラー手札公開
+        getDealer().flip(1, true);
         // プレイヤーバースト
-        if (player().isBurst())  return "LOSE";
+        if (getPlayer().isBurst())  return "LOSE";
         // ディーラーバースト
-        if (dealer().isBurst()) {
-            pay(0);
-            return "WIN";
-        }
-        // 数値の比較
-
+        if (getDealer().isBurst()) return "WIN";
+        /* 数値の比較 */
         // プレイヤー勝利
-        if (player().getHandTotal() > dealer().getHandTotal()) {
-            pay(0);
-            return "WIN";
-        }
+        if (getPlayer().getHandTotal() > getDealer().getHandTotal()) return "WIN";
         // ディーラー勝利
-        if (player().getHandTotal() < dealer().getHandTotal()) return "LOSE";
+        if (getPlayer().getHandTotal() < getDealer().getHandTotal()) return "LOSE";
         // ひきわけ
-        pay(1);
         return "DRAW";
     }
 
     /* 払い戻し */
-    public void pay(int property) {
-        final int WIN = 0;
-        final int DRAW = 1;
-        switch (property) {
-            case WIN -> player().addMoney(player().getBet() * 2);
-            case DRAW -> player().addMoney(player().getBet());
+    public void pay(String result) {
+        switch (result) {
+            case "WIN" -> getPlayer().addMoney(getPlayer().getBet() * 2);
+            case "DRAW" -> getPlayer().addMoney(getPlayer().getBet());
             default -> {}
         }
     }
 
     /* 情報取得メソッド*/
-    public Player dealer() {
+    public Player getDealer() {
         Player obj = null;
         for (Player dealer : playerList) if (dealer.isDealer()) obj = dealer;
         return obj;
     }
-    public Player player() {
+    public Player getPlayer() {
         Player obj = null;
         for (Player player : playerList) if (!player.isDealer()) obj = player;
         return obj;
     }
     // getter
     public Deck getDeck() { return deck; }
-    public int getPlayerHandAmount() { return player().getCardAmount(); }
-    public int getDealerHandAmount() { return dealer().getCardAmount(); }
-    public int getPlayerHandCalc() { return player().getHandTotal(); }
-    public int getDealerHandCalc() { return dealer().getHandTotal(); }
-    public Card getPlayerCard(int order) { return player().getCard(order); }
-    public Card getDealerCard(int order) { return dealer().getCard(order); }
+    public int getCardAmount(Player player) { return player.getCardAmount(); }
+    public int getHandTotal(Player player) {return player.getHandTotal(); }
+    public Card getCard(Player player, int order) { return player.getCard(order); }
+    public int getPlayerHandAmount() { return getPlayer().getCardAmount(); }
+    public int getDealerHandAmount() { return getDealer().getCardAmount(); }
+    public int getPlayerHandCalc() { return getPlayer().getHandTotal(); }
+    public int getDealerHandCalc() { return getDealer().getHandTotal(); }
+    public Card getPlayerCard(int order) { return getPlayer().getCard(order); }
+    public Card getDealerCard(int order) { return getDealer().getCard(order); }
 }

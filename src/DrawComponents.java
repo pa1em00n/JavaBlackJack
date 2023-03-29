@@ -1,5 +1,9 @@
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -154,7 +158,16 @@ public class DrawComponents {
         centeringText(g2,line1, 400, 245, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
         centeringText(g2,line2, 400, 305, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
     }
-    // デッキ描画
+
+    /* スプライト */
+
+    // タイトル背景のカードたち
+    public void ttlBGDraw(Graphics2D g2) {
+        g2.drawImage(card[11], 100, 300, null);
+        g2.drawImage(card[1], 130, 270, null);
+
+    }
+    // デッキ
     public void deckDraw(Graphics2D g2 ,int x, int y, int amount) {
         for (int i=0; i<amount; ++i) g2.drawImage(card[CARD_BACK], x, y - (i/2), 80,120,null);
         deckTopX = x;
@@ -241,6 +254,28 @@ public class DrawComponents {
             ) : CARD_BACK], 620 - (order*90), deckTopY-200, 80,120,null);
         }
     }
+
+    // 賭け金・所持金閲覧ウィンドウ
+    public void moneyInfoBox(Graphics2D g2, int x, int y, int havingMoney, int betMoney) {
+        // フィールド
+        RoundRectangle2D shape = new RoundRectangle2D.Double(x-80,y,300,80,80,80);
+        g2.setPaint(new GradientPaint(0,0,new Color(128,128,128,128),0,100,new Color(0,0,0,128)));
+        g2.fill(shape);
+        // 枠線
+        g2.setPaint(Color.WHITE);
+        g2.setStroke(new BasicStroke(2));
+        g2.draw(shape);
+        // テキストのフォント
+        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+        // テキスト - 所持金
+        shadowedText(g2, "総資金："+havingMoney,x+15,y+30, (havingMoney == 0) ? Color.RED : Color.WHITE, 2, Color.BLACK);
+        // バー
+        g2.setColor(Color.WHITE);
+        g2.drawLine(x+5, y+40, (x+220)-10, y+40);
+        // テキスト - 賭け金
+        shadowedText(g2, "賭け金："+betMoney,x+15,y+65, Color.WHITE, 2, Color.BLACK);
+    }
+
     // ポイント台
     public void pointTableDraw(Graphics2D g2) {
         g2.drawImage(chip[0], 116, 265,216, 373, (1328 / 4) * 2, (708 / 2), (1328 / 4) * 3, (708 / 2) * 2, null);
@@ -250,11 +285,13 @@ public class DrawComponents {
         (332, 354)
          */
     }
+
     // 勝敗
     public void fadeInCenterText(Graphics2D g2, String text, int x, int y, Color color, int edgeDepth, Color shadow){
         fadeInCenterText.call(g2);
         centeringTextWithEdge(g2, text, x,y, new Color(color.getRed(), color.getGreen(), color.getBlue(),fadeInCenterText.getTextAlpha()), edgeDepth, new Color(shadow.getRed(), shadow.getGreen(), shadow.getBlue(),fadeInCenterText.getTextAlpha()));
     }
+
     public int getLFadePhase() { return textCenterLineBack.getFadePhase(); }
     public void resetLFade() {textCenterLineBack.reSet();}
     public int getTFadePhase() { return fadeInCenterText.getFadePhase(); }
