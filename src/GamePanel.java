@@ -6,17 +6,19 @@ import javax.swing.JPanel;
 import java.awt.event.MouseEvent;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
+import java.awt.geom.RoundRectangle2D;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class GamePanel extends JPanel implements Runnable, ActionListener {
+    /* メインフォント */
+    private final String mainFont = "メイリオ";
     /* ゲームモデル */
     private BjEngine engine;
-    /* コンポーネント */
-    private JButton game5Btn, game10Btn, endlessBtn, gotoBetBtn, hitBtn, standBtn;
-    private JTextField nameInput, betInput;
+    private GeneralButton game5Btn, game10Btn, endlessBtn, gotoBetBtn, hitBtn, standBtn;
+    private RoundRectTextField nameInput, betInput;
     /* 描画ユーティリティクラス */
     private final DrawComponents comp = new DrawComponents();
     /* シーン */
@@ -26,8 +28,6 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     private boolean ttl_isSelectedBtn = false;
     private String ttl_DESC = "";
     // 設定
-    private boolean setting_isSelectedBtn = false;
-    private String setting_DESC = "";
     private boolean isInitializingGame;
     // ゲーム
     private boolean isMyTurn;
@@ -68,7 +68,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D)g;
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         switch (scene) {
             case "ttl" -> ttlDraw(g2);
             case "setting" -> settingDraw(g2);
@@ -103,7 +103,9 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         }
     }
     // 名前入力
-    private void nameEngine(){}
+    private void nameEngine(){
+        ttl_isSelectedBtn = false;
+    }
     // 賭け金入力
     private void betEngine(){
         // 開始処理
@@ -183,144 +185,116 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
 
     /* コンポーネント描画メソッド */
     private void postTtlComponents() {
-        // ボタン
-        nazokurasu nazokurasu = new nazokurasu();
-        nazokurasu.setBounds(0,0,300,80);
-        add(nazokurasu);
-        // 開始ボタン
-        JButton startBtn = new JButton("ゲームスタート");
-        startBtn.setBounds(250,400,300,80);
+        // ボタン - 開始
+        SidePositionedButton startBtn = new SidePositionedButton("開始");
+        startBtn.setBounds(500,300,300,80);
+        startBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+                ttl_DESC = "ゲームを開始します。";
+                ttl_isSelectedBtn = true;
+            }
+            public void mouseExited(MouseEvent e) {
+                super.mouseExited(e);
+                ttl_isSelectedBtn = false;
+            }
+        });
         startBtn.setActionCommand("gotoSetting");
         startBtn.addActionListener(this);
-        startBtn.addMouseListener(new MouseAdapter(){
-            public void mouseEntered(MouseEvent e) {
-               ttl_DESC = "ゲームを開始します。";
-               ttl_isSelectedBtn = true;
-            }
-            public void mouseExited(MouseEvent e) { ttl_isSelectedBtn = false; }
-        });
         add(startBtn);
-        // 終了ボタン
-        JButton exitBtn = new JButton("終了");
-        exitBtn.setBounds(250,500,300,80);
-        exitBtn.setActionCommand("gotoExit");
-        exitBtn.addActionListener(this);
-        exitBtn.setContentAreaFilled(false);
-        exitBtn.setBorderPainted(false);
+        // ボタン - 設定
+        SidePositionedButton optBtn = new SidePositionedButton("設定");
+        optBtn.setBounds(500,400,300,80);
+        add(optBtn);
+        // ボタン - 終了
+        SidePositionedButton exitBtn = new SidePositionedButton("終了");
         exitBtn.addMouseListener(new MouseAdapter(){
             public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
                 ttl_DESC = "ゲームを終了します。";
                 ttl_isSelectedBtn = true;
             }
-            public void mouseExited(MouseEvent e) { ttl_isSelectedBtn = false; }
+            public void mouseExited(MouseEvent e) {
+                super.mouseExited(e);
+                ttl_isSelectedBtn = false;
+            }
         });
+        exitBtn.setBounds(500,500,300,80);
+        exitBtn.setActionCommand("gotoExit");
+        exitBtn.addActionListener(this);
         add(exitBtn);
     }
     private void postNameInputComponents() {
-        // テキストボックス
-        // 名前入力
-        nameInput = new JTextField("名前を入力してください",0) {
-            /* 角丸にするメソッド */
-            @Override
-            protected void paintComponent(Graphics g) {
-                if (!isOpaque()) {
-                    int w = getWidth() - 1;
-                    int h = getHeight() - 1;
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setPaint(UIManager.getColor("TextField.background"));
-                    g2.fillRoundRect(0, 0, w, h, h, h);
-                    g2.setPaint(Color.GRAY);
-                    g2.drawRoundRect(0, 0, w, h, h, h);
-                    g2.dispose();
-                }
-                super.paintComponent(g);
-            }
-
-            @Override
-            public void updateUI() {
-                super.updateUI();
-                setOpaque(false);
-                setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-            }
-        };
-        nameInput.setBounds(200,110,400,40);
-        nameInput.setFont(new Font("メイリオ",Font.PLAIN,18));
-        add(nameInput);
-        // ボタン
-        // 5ゲーム
-        game5Btn = new JButton("5ゲーム");
-        game5Btn.setBounds(105,300,190,80);
+        // ボタン - 5ゲーム
+        game5Btn = new GeneralButton("5");
+        game5Btn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
+        game5Btn.setBounds(140,375,40,40);
         game5Btn.setActionCommand("toggle5Game");
         game5Btn.addActionListener(this);
         add(game5Btn);
-        // 10ゲーム
-        game10Btn = new JButton("10ゲーム");
-        game10Btn.setBounds(305,300,190,80);
+        // ボタン - 10ゲーム
+        game10Btn = new GeneralButton("10");
+        game10Btn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
+        game10Btn.setBounds(185,375,40,40);
         game10Btn.setActionCommand("toggle10Game");
         game10Btn.addActionListener(this);
         add(game10Btn);
-        // エンドレス
-        endlessBtn = new JButton("エンドレス");
-        endlessBtn.setBounds(505,300,190,80);
+        // ボタン - エンドレス
+        endlessBtn = new GeneralButton("エンドレス");
+        endlessBtn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
+        endlessBtn.setBounds(230,375,110,40);
         endlessBtn.setActionCommand("toggleEndless");
         endlessBtn.addActionListener(this);
         add(endlessBtn);
-        // 開始ボタン
-        gotoBetBtn = new JButton("開始！");
-        gotoBetBtn.setBounds(250,500,300,80);
+        // テキストボックス - 名前入力
+        nameInput = new RoundRectTextField();
+        nameInput.setText("Player");
+        nameInput.setBounds(200, 280, 400, 40);
+        nameInput.setFont(new Font(mainFont, Font.PLAIN, 18));
+        add(nameInput);
+        // ボタン - 決定
+        gotoBetBtn = new GeneralButton("開始！");
+        gotoBetBtn.setBounds(350,345,300,80);
         gotoBetBtn.setActionCommand("gotoBet");
         gotoBetBtn.addActionListener(this);
         gotoBetBtn.setEnabled(false);
         add(gotoBetBtn);
     }
     private void postBetComponents() {
-        // ベット入力欄
-        // テキストフィールド
-        betInput = new JTextField("0",0) {
-            /* 角丸にするメソッド */
-            @Override
-            protected void paintComponent(Graphics g) {
-                if (!isOpaque()) {
-                    int w = getWidth() - 1;
-                    int h = getHeight() - 1;
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setPaint(UIManager.getColor("TextField.background"));
-                    g2.fillRoundRect(0, 0, w, h, h, h);
-                    g2.setPaint(Color.GRAY);
-                    g2.drawRoundRect(0, 0, w, h, h, h);
-                    g2.dispose();
-                }
-                super.paintComponent(g);
-            }
-
-            @Override
-            public void updateUI() {
-                super.updateUI();
-                setOpaque(false);
-                setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-            }
-        };
-        betInput.setBounds(100,450,200,40);
-        betInput.setFont(new Font("メイリオ",Font.PLAIN,18));
+        // テキストボックス - 賭け金入力欄
+        betInput = new RoundRectTextField();
+        betInput.setFormatterFactory(new NumberFormatterFactory());
+        betInput.setValue(0);
+        betInput.setBounds(120,450,200,40);
+        betInput.setFont(new Font(mainFont, Font.PLAIN,18));
         add(betInput);
-        // ベット
-        JButton betBtn = new JButton("確定");
-        betBtn.setBounds(50,520,120,60);
+        // ボタン - 全額
+        GeneralButton allBetBtn = new GeneralButton("全額");
+        allBetBtn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
+        allBetBtn.setBounds(80,520,100,40);
+        allBetBtn.setActionCommand("gosubAllBet");
+        allBetBtn.addActionListener(this);
+        add(allBetBtn);
+        // ボタン - 確定
+        GeneralButton betBtn = new GeneralButton("確定");
+        betBtn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
+        betBtn.setBounds(190,520,100,40);
         betBtn.setActionCommand("gosubGame");
         betBtn.addActionListener(this);
         add(betBtn);
     }
     private void postGameComponents() {
         // ヒット
-        hitBtn = new JButton("ヒット");
+        hitBtn = new GeneralButton("ヒット");
+        hitBtn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
         hitBtn.setBounds(50,520,120,60);
         hitBtn.setActionCommand("gosubHit");
         hitBtn.addActionListener(this);
         add(hitBtn);
         // スタンド
-        standBtn = new JButton("スタンド");
+        standBtn = new GeneralButton("スタンド");
+        standBtn.setInnerTextFont(new Font(mainFont, Font.PLAIN,18));
         standBtn.setBounds(200,520,120,60);
         standBtn.setActionCommand("gosubStand");
         standBtn.addActionListener(this);
@@ -346,38 +320,34 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         g2.setColor(new Color(0, 0, 0, 60));
         g2.fillRect(0,70,getWidth(),60);
         // テキスト - タイトル
-        g2.setFont(new Font("メイリオ",Font.PLAIN,80));
-
+        g2.setFont(new Font(mainFont, Font.PLAIN,80));
         comp.centeringText(g2, "BLACKJACK GAME", 400, 100, new Color(255, 255, 255, 255), 4, new Color(0,0,0,60));
         if (ttl_isSelectedBtn) {
             // テキスト背景 - 選択要素の説明
             g2.setColor(new Color(0, 0, 0, 60));
-            g2.fillRect(150,200,500,150);
+            g2.fillRect(50,200,400,150);
             // テキスト - 選択要素の説明
-            g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+            g2.setFont(new Font(mainFont, Font.PLAIN,20));
             g2.setColor(new Color(255, 255, 255, 255));
-            g2.drawString(ttl_DESC, 204, 250);
+            comp.centeringText(g2, ttl_DESC, 250, 250);
         }
     }
     private void settingDraw(Graphics2D g2){
         // 背景
         comp.bgDraw(g2);
+        // 矩形枠 - 文字入力
+        RoundRectangle2D shape = new RoundRectangle2D.Double(100, 160, 600, 300, 80, 80);
+        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),0,getHeight(),new Color(64,64,64,128)));
+        g2.fill(shape);
+        g2.setPaint(Color.WHITE);
+        g2.setStroke(new BasicStroke(2));
+        g2.draw(shape);
         // テキスト - 文字入力説明見出し
-        g2.setFont(new Font("メイリオ",Font.PLAIN,18));
-        comp.shadowedText(g2, "名前設定", 120,60, new Color(255, 255, 255, 255), 2, new Color(0,0,0,60));
-        // 矩形枠 - 文字入力説明
-        g2.drawRoundRect(100, 80, 600, 100, 10,10);
-
-        // テキスト - ゲームモード見出し
-        comp.shadowedText(g2, "ゲーム数設定", 120,230, new Color(255, 255, 255, 255), 2, new Color(0,0,0,60));
-        // 矩形 - ゲームモード
-        g2.drawRoundRect(100,250,600,200, 10, 10);
-
-        if (setting_isSelectedBtn) {
-            // テキスト - 選択要素の説明
-            g2.setFont(new Font("メイリオ",Font.PLAIN,20));
-            comp.centeringText(g2,setting_DESC, 400, 420);
-        }
+        g2.setFont(new Font(mainFont, Font.PLAIN,28));
+        comp.shadowedText(g2, "名前入力", 120,200, new Color(255, 255, 255, 255), 2, new Color(0,0,0,60));
+        g2.setFont(new Font(mainFont, Font.PLAIN,18));
+        comp.centeringText(g2, "ランキング入りしたときに保存される名前を入力してください。", 400, 250, new Color(255, 255, 255, 255), 2, new Color(0,0,0,60));
+        comp.centeringText(g2, "ゲーム数", 230,360, new Color(255, 255, 255, 255), 2, new Color(0,0,0,60));
     }
     private void betDraw(Graphics2D g2) {
         // 背景
@@ -386,9 +356,16 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         comp.deckDraw(g2, 360, 220, engine.getDeck().getAmount());
         // スプライト - 資金欄
         comp.moneyInfoBox(g2, 0, 160,engine.getPlayer().getMoneyValue(), engine.getPlayer().getBet());
+        // 矩形枠 - ベット
+        RoundRectangle2D shape = new RoundRectangle2D.Double(20, 420, 350, 150, 60, 60);
+        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),0,getHeight(),new Color(64,64,64,128)));
+        g2.fill(shape);
+        g2.setPaint(Color.WHITE);
+        g2.setStroke(new BasicStroke(2));
+        g2.draw(shape);
         // テキスト - ベット
-        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
-        comp.shadowedText(g2, "賭け金：",20,475, Color.BLACK, 2, new Color(255,255,255,60));
+        g2.setFont(new Font(mainFont, Font.PLAIN,20));
+        comp.shadowedText(g2, "賭け金：",40,475, Color.WHITE, 2, new Color(255,255,255,60));
         // アニメーション - ゲーム開始フェード
         comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
     }
@@ -426,7 +403,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         comp.pointTableDraw(g2);
         // テキスト - 点数
         g2.setColor(Color.WHITE);
-        g2.setFont(new Font("メイリオ",Font.PLAIN,30));
+        g2.setFont(new Font(mainFont ,Font.PLAIN,30));
         comp.centeringText(g2, String.valueOf(engine.getPlayerHandCalc()), 168, 332, (engine.getPlayerHandCalc() > 21) ?  Color.RED : Color.WHITE, 2, new Color(0,0,0,60));
         comp.centeringText(g2, String.valueOf((isMyTurn) ? "？" : engine.getDealerHandCalc()), 638, 192, (engine.getDealerHandCalc() > 21) ?  Color.RED : Color.WHITE, 2, new Color(0,0,0,60));
         // テキスト - バースト
@@ -471,9 +448,9 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // 背景
         comp.bgDraw(g2);
         // ランキング
-        g2.setFont(new Font("メイリオ",Font.PLAIN,50));
+        g2.setFont(new Font(mainFont ,Font.PLAIN,50));
         comp.centeringText(g2, "ランキング", 400, 100, Color.WHITE, 2, new Color(0,0,0,60));
-        g2.setFont(new Font("メイリオ",Font.PLAIN,20));
+        g2.setFont(new Font(mainFont ,Font.PLAIN,20));
         comp.shadowedText(g2, "RANK", 150, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
         comp.shadowedText(g2, "NAME", 150 + 80, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
         comp.shadowedText(g2, "WIN", 150 + 280, 170, Color.WHITE, 2, new Color(255, 255, 255, 60));
@@ -533,30 +510,24 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 postNameInputComponents();
             }
             case "toggle5Game" -> {
-                setting_DESC = "5ゲーム：運に左右されやすいゲーム";
                 gameMax = 5;
-                setting_isSelectedBtn = true;
-                game5Btn.setForeground(Color.RED);
-                game10Btn.setForeground(Color.BLACK);
-                endlessBtn.setForeground(Color.BLACK);
+                game5Btn.changeBgColor("RED");
+                game10Btn.changeBgColor("");
+                endlessBtn.changeBgColor("");
                 gotoBetBtn.setEnabled(true);
             }
             case "toggle10Game" -> {
-                setting_DESC = "10ゲーム：実力が決めるゲーム";
                 gameMax = 10;
-                setting_isSelectedBtn = true;
-                game5Btn.setForeground(Color.BLACK);
-                game10Btn.setForeground(Color.RED);
-                endlessBtn.setForeground(Color.BLACK);
+                game5Btn.changeBgColor("");
+                game10Btn.changeBgColor("RED");
+                endlessBtn.changeBgColor("");
                 gotoBetBtn.setEnabled(true);
             }
             case "toggleEndless" -> {
-                setting_DESC = "エンドレス：引き際の駆け引きが肝心";
                 gameMax = -1;
-                setting_isSelectedBtn = true;
-                game5Btn.setForeground(Color.BLACK);
-                game10Btn.setForeground(Color.BLACK);
-                endlessBtn.setForeground(Color.RED);
+                game5Btn.changeBgColor("");
+                game10Btn.changeBgColor("");
+                endlessBtn.changeBgColor("RED");
                 gotoBetBtn.setEnabled(true);
             }
             case "gotoBet" -> {
@@ -566,6 +537,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 scene = "bet";
                 postBetComponents();
             }
+            case "gosubAllBet" -> betInput.setValue(engine.getPlayer().getMoneyValue());
             case "gosubGame" -> {
                 // ベット適正か判断
                 if(Integer.parseInt(betInput.getText()) > engine.getPlayer().getMoneyValue()) return;

@@ -163,9 +163,8 @@ public class DrawComponents {
 
     // タイトル背景のカードたち
     public void ttlBGDraw(Graphics2D g2) {
-        g2.drawImage(card[11], 100, 300, null);
-        g2.drawImage(card[1], 130, 270, null);
-
+        g2.drawImage(card[11], 100, 350, null);
+        g2.drawImage(card[1], 130, 320, null);
     }
     // デッキ
     public void deckDraw(Graphics2D g2 ,int x, int y, int amount) {
