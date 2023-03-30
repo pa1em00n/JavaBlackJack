@@ -30,8 +30,8 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     // 設定
     private boolean isInitializingGame;
     // ゲーム
-    private boolean isMyTurn;
-    private int gameCount, gameMax, winCount, loseCount, burstAnimation;
+    private boolean isAnimatedGameStarting, isMyTurn, isBurstAnimated, isGameFinished;
+    private int gameCount, gameMax, winCount, loseCount;
     private String gameResultJudge;
     // リザルト
     private final ArrayList<Ranker> rankerList = new ArrayList<>();
@@ -122,9 +122,10 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             winCount = 0;
             loseCount = 0;
             gameCount = 1;
-            burstAnimation = 0;
-            gameResultJudge = "before";
+            isBurstAnimated = false;
         }
+        // 判定をリセット
+        gameResultJudge = "before";
         // 賭け金を0にする
         engine.bet(0);
     }
@@ -136,6 +137,10 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         engine.gameInit();
         // 自分ターン
         isMyTurn = true;
+        // 各種アニメーション一時変数リセット
+        comp.initTextAndCenterLine();
+        isAnimatedGameStarting = true;
+        isGameFinished = false;
     }
     private void hitEngine() {
         // ヒット(1枚ひく)
@@ -143,7 +148,10 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         // 21以上でターンを飛ばす
         if (engine.getPlayer().getHandTotal() >= 21) {
             standEngine();
-            if (engine.getPlayer().getHandTotal() > 21) burstAnimation = 1;
+            if (engine.getPlayer().getHandTotal() > 21) {
+                isBurstAnimated = true;
+                comp.initTextAndCenterLine();
+            }
         }
     }
     private void standEngine() {
@@ -160,6 +168,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             case "LOSE" -> ++loseCount;
             case "WIN" -> ++winCount;
         }
+        comp.initTextAndCenterLine();
     }
     private void resultEngine() {
         // ランクインかどうか
@@ -302,8 +311,8 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
     }
     private void postResultComponents() {
         // 開始ボタン
-        JButton ttlBtn = new JButton("タイトルへ");
-        ttlBtn.setBounds(250,500,300,80);
+        GeneralButton ttlBtn = new GeneralButton("タイトルへ");
+        ttlBtn.setBounds(250,450,300,80);
         ttlBtn.setActionCommand("gotoTtl");
         ttlBtn.addActionListener(this);
         add(ttlBtn);
@@ -337,7 +346,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         comp.bgDraw(g2);
         // 矩形枠 - 文字入力
         RoundRectangle2D shape = new RoundRectangle2D.Double(100, 160, 600, 300, 80, 80);
-        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),0,getHeight(),new Color(64,64,64,128)));
+        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),400, 460,new Color(64,64,64,128)));
         g2.fill(shape);
         g2.setPaint(Color.WHITE);
         g2.setStroke(new BasicStroke(2));
@@ -358,7 +367,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         comp.moneyInfoBox(g2, 0, 160,engine.getPlayer().getMoneyValue(), engine.getPlayer().getBet());
         // 矩形枠 - ベット
         RoundRectangle2D shape = new RoundRectangle2D.Double(20, 420, 350, 150, 60, 60);
-        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),0,getHeight(),new Color(64,64,64,128)));
+        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),370, 570,new Color(64,64,64,128)));
         g2.fill(shape);
         g2.setPaint(Color.WHITE);
         g2.setStroke(new BasicStroke(2));
@@ -367,36 +376,44 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         g2.setFont(new Font(mainFont, Font.PLAIN,20));
         comp.shadowedText(g2, "賭け金：",40,475, Color.WHITE, 2, new Color(255,255,255,60));
         // アニメーション - ゲーム開始フェード
-        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
+        comp.textAndCenterLine(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
     }
     private void gameDraw(Graphics2D g2){
-        boolean writtenHands = true;
+        int writtenHands = 0;
         // 背景
         comp.bgDraw(g2);
         // スプライト - 山札
         comp.deckDraw(g2, 360, 220, engine.getDeck().getAmount());
         // アニメーション - ゲーム開始フェード
-        comp.textCenterLineBack(g2, (gameMax == -1) ? "GAME "+gameCount : "GAME "+gameCount+" / "+gameMax);
-        if (comp.getLFadePhase() != -1) return;
+        if (isAnimatedGameStarting) {
+            comp.textAndCenterLine(g2, "GAME", "START");
+            if (comp.getTextAndCenterLineMode().equals("sleep")) {
+                isAnimatedGameStarting = false;
+                comp.initTextAndCenterLine();
+            }
+            return;
+        }
         // スプライト - 手札
-        for(int i=0; i<engine.getCardAmount(engine.getPlayer()); ++i) {
-            if (i != 0) {
-                if (engine.getPlayerCard(i - 1).getAnimationPhase().equals("on hand")) comp.myHandDraw(g2, i, engine.getPlayerCard(i));
-                if (i == engine.getCardAmount(engine.getPlayer())-1 && !engine.getPlayerCard(i).getAnimationPhase().equals("on hand")) {
+        for(int i=0; i<engine.getCardAmount(engine.getPlayer()); ++i)
+            if (i == 0) comp.myHandDraw(g2, i, engine.getPlayerCard(i));
+            else {
+                if (engine.getPlayerCard(i - 1).getAnimationPhase().equals("on hand"))
+                    comp.myHandDraw(g2, i, engine.getPlayerCard(i));
+                if (i == engine.getCardAmount(engine.getPlayer()) - 1 && engine.getPlayerCard(i).getAnimationPhase().equals("on hand")) {
                     // 手札最後まで描画完了か取得
-                    writtenHands = false;
+                    ++writtenHands;
                 }
-            } else comp.myHandDraw(g2, i, engine.getPlayerCard(i));
-        }
-        for(int i=0; i<engine.getCardAmount(engine.getDealer()); ++i) {
-            if (i != 0) {
-                if (engine.getDealerCard(i-1).getAnimationPhase().equals("on hand")) comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
-                if (i == engine.getCardAmount(engine.getDealer())-1 && !engine.getDealerCard(i).getAnimationPhase().equals("on hand")) {
+            }
+        for(int i=0; i<engine.getCardAmount(engine.getDealer()); ++i)
+            if (i == 0) comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
+            else {
+                if (engine.getDealerCard(i - 1).getAnimationPhase().equals("on hand"))
+                    comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
+                if (i == engine.getCardAmount(engine.getDealer()) - 1 && engine.getDealerCard(i).getAnimationPhase().equals("on hand")) {
                     // 手札最後まで描画完了か取得
-                    writtenHands = false;
+                    ++writtenHands;
                 }
-            } else comp.opponentHandDraw(g2, i, engine.getDealerCard(i));
-        }
+            }
         // スプライト - 資金
         comp.moneyInfoBox(g2, 0, 160,engine.getPlayer().getMoneyValue(), engine.getPlayer().getBet());
         // スプライト - 点数の背景
@@ -406,47 +423,56 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         g2.setFont(new Font(mainFont ,Font.PLAIN,30));
         comp.centeringText(g2, String.valueOf(engine.getPlayerHandCalc()), 168, 332, (engine.getPlayerHandCalc() > 21) ?  Color.RED : Color.WHITE, 2, new Color(0,0,0,60));
         comp.centeringText(g2, String.valueOf((isMyTurn) ? "？" : engine.getDealerHandCalc()), 638, 192, (engine.getDealerHandCalc() > 21) ?  Color.RED : Color.WHITE, 2, new Color(0,0,0,60));
+        // 手札が描画終了していなければ以後実行しない
+        if (writtenHands < 2) return;
         // テキスト - バースト
-        if (!writtenHands) return;
-        if (burstAnimation == 1) {
+        if (isBurstAnimated) {
             comp.fadeInCenterText(g2, "BURST", 400, 300, Color.RED, 2, Color.WHITE);
-            if (comp.getTFadePhase() == -1) {
-                burstAnimation = 0;
-                comp.resetTFade();
+            if (comp.getTextAndCenterLineMode().equals("sleep")) {
+                isBurstAnimated = false;
+                comp.initTextAndCenterLine();
             }
-        } else {
-            // テキスト - 勝敗
-            if (gameResultJudge.equals("LOSE") || gameResultJudge.equals("DRAW")|| gameResultJudge.equals("WIN")) {
-                comp.fadeInCenterText(g2, gameResultJudge, 400, 300, switch (gameResultJudge) {
-                    case "LOSE" -> Color.BLUE;
-                    case "DRAW" -> Color.ORANGE;
-                    case "WIN" -> Color.RED;
-                    default -> Color.BLACK;
-                }, 2, Color.WHITE);
-            }
-            if (comp.getTFadePhase() == -1) {
-                gameResultJudge = "end";
-                comp.resetTFade();
+            return;
+        }
+        // テキスト - 勝敗
+        if (!isGameFinished && (gameResultJudge.equals("LOSE") || gameResultJudge.equals("DRAW")|| gameResultJudge.equals("WIN"))) {
+            // テキスト
+            comp.fadeInCenterText(g2, gameResultJudge, 400, 300, switch (gameResultJudge) {
+                case "LOSE" -> Color.BLUE;
+                case "DRAW" -> Color.ORANGE;
+                case "WIN" -> Color.RED;
+                default -> Color.BLACK;
+            }, 2, Color.WHITE);
+            if (comp.getTextAndCenterLineMode().equals("sleep")) {
+                // 試合数カウントを進める
                 ++gameCount;
-                if (engine.getPlayer().getMoneyValue() > 0) {
-                    comp.resetLFade();
-                    nextGame();
-                }
+                // 終了条件を満たしている場合終了フラグオン
+                if (engine.getPlayer().getMoneyValue() <= 0 || (gameMax != -1 && gameCount > gameMax)) isGameFinished = true;
+                // 続行可能な場合
+                else nextGame();
+                comp.initTextAndCenterLine();
             }
-            // テキスト - GAME OVER
-            if (engine.getPlayer().getMoneyValue() <= 0 && gameResultJudge.equals("end")) {
-                comp.fadeInCenterText(g2, "GAME OVER", 400, 300, Color.RED, 2, Color.BLACK);
-                if (comp.getTFadePhase() == -1) {
-                    comp.resetLFade();
-                    comp.resetTFade();
-                    nextGame();
-                }
+        }
+        // テキスト - GAME OVER
+        if (isGameFinished) {
+            comp.fadeInCenterText(g2, "GAME OVER", 400, 300, Color.RED, 2, Color.BLACK);
+            if (comp.getTextAndCenterLineMode().equals("sleep")) {
+                endGame();
+                comp.initTextAndCenterLine();
+
             }
         }
     }
     private void resultDraw(Graphics2D g2){
         // 背景
         comp.bgDraw(g2);
+        // 矩形枠 - ランキング
+        RoundRectangle2D shape = new RoundRectangle2D.Double(100, 60, 600, 350, 60, 60);
+        g2.setPaint(new GradientPaint(0,0,new Color(96,96,96,128),700, 480,new Color(64,64,64,128)));
+        g2.fill(shape);
+        g2.setPaint(Color.WHITE);
+        g2.setStroke(new BasicStroke(2));
+        g2.draw(shape);
         // ランキング
         g2.setFont(new Font(mainFont ,Font.PLAIN,50));
         comp.centeringText(g2, "ランキング", 400, 100, Color.WHITE, 2, new Color(0,0,0,60));
@@ -466,24 +492,14 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             g2.drawLine(120, 180 + (i * 40),680,180 + (i * 40));
         }
     }
+    // 継続or終了 画面遷移処理
     private void nextGame() {
-        gameResultJudge = "before";
-        // がめおべら
-        if (engine.getPlayer().getMoneyValue() <= 0) {
-            endGame();
-            return;
-        }
-        if (gameMax != -1 && gameCount > gameMax) {
-            endGame();
-            return;
-        }
         betEngine();
         removeAll();
         scene = "bet";
         postBetComponents();
-        hitBtn.setEnabled(true);
-        standBtn.setEnabled(true);
     }
+    // 終了画面遷移処理
     private void endGame() {
         resultEngine();
         removeAll();
@@ -549,11 +565,6 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
             }
             case "gosubHit" -> hitEngine();
             case "gosubStand" -> standEngine();
-            case "gotoResult" -> {
-                resultEngine();
-                removeAll();
-                postResultComponents();
-            }
             case "gotoExit" -> System.exit(0);
         }
     }

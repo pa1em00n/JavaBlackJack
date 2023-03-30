@@ -1,50 +1,48 @@
 import java.awt.*;
 
-public class TextCenterLineBack {
-    private int fadePhase = 0;
+public class TextAndCenterLine {
+    private String mode = "fadeIn";
     private int textAlpha = 0;
     private int lineBgPosition = 800;
-    private int wait = 0;
-    public void call(Graphics2D g2) {
-        g2.setColor(new Color(0,0,0,60));
-        g2.fillRect(lineBgPosition,220, 800, 110);
-        g2.setFont(new Font("メイリオ",Font.PLAIN,50));
+    private int wait = 30;
 
-        switch (fadePhase) {
-            case 0 -> {
+    public void animate() {
+        switch (mode) {
+            case "fadeIn" -> {
                 if (textAlpha < 255) {
                     textAlpha += 20;
                     if (lineBgPosition != 0) lineBgPosition -= 160;
                 }
                 if (textAlpha >= 255) {
                     textAlpha = 255;
-                    fadePhase = 1;
-                    wait = 30;
+                    mode = "stay";
                 }
             }
-            case 1 -> {
-                if (wait <= 0) fadePhase = 2;
+            case "stay" -> {
+                if (wait <= 0) mode = "fadeOut";
                 --wait;
             }
-            case 2 -> {
+            case "fadeOut" -> {
                 if (textAlpha <= 255) {
                     textAlpha -= 20;
                     if (lineBgPosition != -800) lineBgPosition -= 160;
                 }
                 if (textAlpha <= 0) {
                     textAlpha = 0;
-                    fadePhase = -1;
+                    mode = "sleep";
                 }
             }
         }
     }
     public void reSet() {
-        fadePhase = 0;
+        mode = "fadeIn";
         textAlpha = 0;
         lineBgPosition = 800;
-        wait = 0;
+        wait = 30;
     }
 
+    public int getLineBgPosition() { return lineBgPosition; }
+
     public int getTextAlpha() { return textAlpha; }
-    public int getFadePhase() { return fadePhase; }
+    public String getMode() { return mode; }
 }

@@ -1,9 +1,6 @@
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.RoundRectangle2D;
+import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -75,13 +72,9 @@ public class DrawComponents {
     private final int CARD_BACK = 0;
     private int deckTopX = 0;
     private int deckTopY = 0;
-    private final TextCenterLineBack textCenterLineBack;
-    private final FadeInCenterText fadeInCenterText;
+    private final TextAndCenterLine textAndCenterLine;
 
-    public DrawComponents() {
-        textCenterLineBack = new TextCenterLineBack();
-        fadeInCenterText = new FadeInCenterText();
-    }
+    public DrawComponents() { textAndCenterLine = new TextAndCenterLine(); }
 
     /* 画像読み込み */
     public void bufferInclude() {
@@ -97,7 +90,13 @@ public class DrawComponents {
     /* 汎用描画 */
 
     // 背景
-    public void bgDraw(Graphics2D g2) { g2.drawImage(BG, 0, 0, null); }
+    public void bgDraw(Graphics2D g2) {
+        // フィールド
+        Rectangle2D shape = new Rectangle2D.Double(0, 0,800,600);
+        g2.setPaint(new GradientPaint(0,0,new Color(0,128,0,255),600,0,new Color(0,96,0,255)));
+        g2.fill(shape);
+        // 枠線
+    }
     // 影つけ
     public void shadowedText(Graphics2D g2, String text, int x, int y, Color color, int shadowPosition, Color shadowColor){
         // 影
@@ -148,17 +147,25 @@ public class DrawComponents {
         g2.drawString(text, x, y);
     }
     // センタリング1行・帯付き
-    public void textCenterLineBack (Graphics2D g2, String line) {
-        textCenterLineBack.call(g2);
-        centeringText(g2, line, 400, 275, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
+    public void textAndCenterLine (Graphics2D g2, String... lines) {
+        // センターライン
+        g2.setColor(new Color(0,0,0,60));
+        g2.fillRect(textAndCenterLine.getLineBgPosition(), 220, 800, 110);
+        // 文字
+        g2.setFont(new Font("メイリオ",Font.PLAIN,50));
+        for (int column=0; column<lines.length; ++column) {
+            centeringText(g2, lines[column], 400, ((lines.length % 2 == 0) ? 305 : 275)+(column*60)-((int)Math.floor(lines.length / 2.0)*60), new Color(255, 255, 255, textAndCenterLine.getTextAlpha()),
+                    4, new Color(0, 0, 0, textAndCenterLine.getTextAlpha() / 4));
+        }
+        // アニメーション
+        textAndCenterLine.animate();
     }
-    // センタリング2行・帯付き
-    public void textCenterLineBack (Graphics2D g2, String line1, String line2) {
-        textCenterLineBack.call(g2);
-        centeringText(g2,line1, 400, 245, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
-        centeringText(g2,line2, 400, 305, new Color(255, 255, 255, textCenterLineBack.getTextAlpha()), 4, new Color(0,0,0,textCenterLineBack.getTextAlpha() / 4));
+    // 勝敗
+    public void fadeInCenterText(Graphics2D g2, String text, int x, int y, Color color, int edgeDepth, Color shadow){
+        g2.setFont(new Font("メイリオ",Font.BOLD,100));
+        centeringTextWithEdge(g2, text, x,y, new Color(color.getRed(), color.getGreen(), color.getBlue(),textAndCenterLine.getTextAlpha()), edgeDepth, new Color(shadow.getRed(), shadow.getGreen(), shadow.getBlue(),textAndCenterLine.getTextAlpha()));
+        textAndCenterLine.animate();
     }
-
     /* スプライト */
 
     // タイトル背景のカードたち
@@ -284,15 +291,7 @@ public class DrawComponents {
         (332, 354)
          */
     }
-
-    // 勝敗
-    public void fadeInCenterText(Graphics2D g2, String text, int x, int y, Color color, int edgeDepth, Color shadow){
-        fadeInCenterText.call(g2);
-        centeringTextWithEdge(g2, text, x,y, new Color(color.getRed(), color.getGreen(), color.getBlue(),fadeInCenterText.getTextAlpha()), edgeDepth, new Color(shadow.getRed(), shadow.getGreen(), shadow.getBlue(),fadeInCenterText.getTextAlpha()));
-    }
-
-    public int getLFadePhase() { return textCenterLineBack.getFadePhase(); }
-    public void resetLFade() {textCenterLineBack.reSet();}
-    public int getTFadePhase() { return fadeInCenterText.getFadePhase(); }
-    public void resetTFade() {fadeInCenterText.reSet();}
+    // getter
+    public String getTextAndCenterLineMode() { return textAndCenterLine.getMode(); }
+    public void initTextAndCenterLine() { textAndCenterLine.reSet() ;}
 }
