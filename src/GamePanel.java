@@ -93,7 +93,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
                 final String[] defaultRankerName = {"MUR", "AIG", "ATU", "KUT", "TA.", ""};
                 final int[] defaultRankerWins = {6, 5, 4, 3, 2};
                 final int[] defaultRankerLoses = {4, 5, 6, 7, 8};
-                final int[] defaultRankerMoneys = {1000, 800, 500, 300, 200};
+                final int[] defaultRankerMoneys = {300, 250, 200, 150, 100};
                 for (int i = 0; i < 5; ++i) {
                     final Ranker ranker = new Ranker(i + 1, defaultRankerName[i], defaultRankerWins[i], defaultRankerLoses[i], defaultRankerMoneys[i]);
                     rankerList.add(ranker);
@@ -103,9 +103,7 @@ public class GamePanel extends JPanel implements Runnable, ActionListener {
         }
     }
     // 名前入力
-    private void nameEngine(){
-        ttl_isSelectedBtn = false;
-    }
+    private void nameEngine(){ ttl_isSelectedBtn = false; }
     // 賭け金入力
     private void betEngine(){
         // 開始処理

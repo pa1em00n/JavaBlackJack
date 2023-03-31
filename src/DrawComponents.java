@@ -93,7 +93,7 @@ public class DrawComponents {
     public void bgDraw(Graphics2D g2) {
         // フィールド
         Rectangle2D shape = new Rectangle2D.Double(0, 0,800,600);
-        g2.setPaint(new GradientPaint(0,0,new Color(0,128,0,255),600,0,new Color(0,96,0,255)));
+        g2.setPaint(new GradientPaint(0,0,new Color(0,128,0,255),900,0,new Color(0,96,0,255)));
         g2.fill(shape);
         // 枠線
     }
